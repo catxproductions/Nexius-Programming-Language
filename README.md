@@ -97,6 +97,16 @@ while -- checkfor("w") == true:
 
 Without `perm.`, an `on(key)press` or `on(key)release` listener runs once on the next matching event. With `perm.`, it runs for every matching event. The space bar is named `"space"`.
 
+### Counted loops
+
+Use `Loop --(amount):` to repeat a block a fixed number of times. The amount is evaluated once and must be a non-negative whole number.
+
+```nexius
+Loop --(5):
+  output("This runs five times.")
+--
+```
+
 ### Functions
 ```nexius
 define -- greet():
@@ -126,7 +136,7 @@ isReady = boolIf -- score >= 100 --
 
 The browser preview currently parses Nexius source into an internal syntax tree and executes that tree in a JavaScript-based Nexius runtime. It is **not yet generating native machine code or WebAssembly**. That is a later compiler-backend milestone.
 
-Current preview supports variables, numeric/string expressions, comparisons, lists with indexed access, `input()`, `numinput()`, multi-value `output()`, `clear()`, `wait(time)`, `if/ELIF/ELSE`, `while`, zero-argument functions, keyboard state checks, press/release event blocks, persistent `perm.` listeners, and the comment forms above. Function parameters, return values, pointers, real-time event listeners, and native compilation are not implemented yet.
+Current preview supports variables, numeric/string expressions, comparisons, counted `Loop` blocks, lists with indexed access, `input()`, `numinput()`, multi-value `output()`, `clear()`, `wait(time)`, `if/ELIF/ELSE`, `while`, zero-argument functions, keyboard state checks, press/release event blocks, persistent `perm.` listeners, and the comment forms above. Function parameters, return values, pointers, real-time event listeners, and native compilation are not implemented yet.
 
 ## Running locally
 
