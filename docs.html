@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="theme-color" content="#0b0d12">
+<title>Nexius Language Documentation</title><link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<header class="topbar"><a class="brand" href="./"><span class="brand-mark">N</span><span>NEXIUS <small>LANGUAGE REFERENCE</small></span></a><div class="top-actions"><a class="quiet docs-link" href="./">Back to Studio</a></div></header>
+<main class="docs-page">
+<section class="docs-hero"><span class="eyebrow">CURRENT LANGUAGE REFERENCE</span><h1>Nexius Documentation</h1><p>Syntax, built-in commands, operators, and rules for writing Nexius programs in Nexius Studio.</p><a class="docs-back" href="./">← Return to Studio</a></section>
+<div class="docs-layout">
+<nav class="panel docs-nav" aria-label="Documentation sections"><a href="#start">Quick start</a><a href="#comments">Comments</a><a href="#values">Variables and values</a><a href="#io">Input and output</a><a href="#lists">Lists</a><a href="#console">Console commands</a><a href="#conditions">Conditions</a><a href="#loops">Loops</a><a href="#functions">Functions</a><a href="#operators">Operators</a><a href="#rules">Language rules</a><a href="#limits">Limitations</a></nav>
+<div class="docs-content">
+<section class="panel docs-card" id="start"><h2>Quick start</h2><p>Write code in the Studio editor, select <strong>Compile</strong> to check syntax, then select <strong>Run</strong>. Ctrl+Enter (or Cmd+Enter) also runs the program.</p><pre><code>name = input("What is your name? ")
+output("Hello,", name)</code></pre></section>
+<section class="panel docs-card" id="comments"><h2>Comments</h2><p>Use <code>,,,</code> for a single-line comment and matching <code>...</code> markers for a multiline comment.</p><pre><code>,,, This line is ignored
+
+...
+This section is ignored.
+It can span multiple lines.
+...</code></pre></section>
+<section class="panel docs-card" id="values"><h2>Variables and values</h2><p>Assign values with one equals sign. Names begin with a letter or underscore and may contain letters, numbers, and underscores.</p><pre><code>player_name = "Alex"
+score = 100
+is_ready = true
+score = score + 5
+output(player_name, score, is_ready)</code></pre><p>Supported values include numbers, strings, booleans (<code>true</code> and <code>false</code>), and lists.</p></section>
+<section class="panel docs-card" id="io"><h2>Input and output</h2><h3>Text input</h3><pre><code>name = input("Enter your name: ")</code></pre><h3>Numeric input</h3><pre><code>score = numinput("Enter a number: ")</code></pre><p>Invalid or empty numeric input produces an error. Output accepts multiple comma-separated expressions:</p><pre><code>output("Score:", score)
+output("Calculation:", 5 + 3)</code></pre><p>Values are printed on one line, separated by spaces.</p></section>
+<section class="panel docs-card" id="lists"><h2>Lists</h2><p>Comma-separated values inside parentheses create a list. Indexes start at zero.</p><pre><code>numbers = (10, 20, 30)
+names = ("Alex", "Sam", "Jordan")
+output(numbers)
+output(numbers[0])
+output(names[2])</code></pre><p>Use square brackets to read an item. The index must be a whole number within the list's bounds.</p></section>
+<section class="panel docs-card" id="console"><h2>Console commands</h2><h3><code>clear()</code></h3><p>Clears the program output console. It does not stop execution.</p><h3><code>wait(time)</code></h3><p>Pauses execution for the specified number of seconds. The value must be non-negative; decimal seconds are allowed.</p><pre><code>output("Starting...")
+wait(2)
+output("Two seconds later.")
+clear()
+output("Console cleared.")</code></pre></section>
+<section class="panel docs-card" id="conditions"><h2>Conditions</h2><p>Begin with <code>if -- condition:</code>. Optional branches use <code>-- ELIF -- condition:</code> and <code>-- ELSE --:</code>. Close the complete conditional with <code>--</code>.</p><pre><code>if -- score >= 100:
+  output("You win!")
+-- ELIF -- score >= 50:
+  output("Almost there.")
+-- ELSE --:
+  output("Keep trying.")
+--</code></pre><p>Boolean expressions can be assigned using <code>boolIf</code>:</p><pre><code>is_ready = boolIf -- score >= 100 --</code></pre></section>
+<section class="panel docs-card" id="loops"><h2>Loops</h2><p>A <code>while</code> block repeats while its condition is true. Close the block with <code>--</code>.</p><pre><code>counter = 0
+while -- counter < 5:
+  output(counter)
+  counter = counter + 1
+--</code></pre><p>An instruction limit helps prevent accidental infinite loops.</p></section>
+<section class="panel docs-card" id="functions"><h2>Functions</h2><p>Define a zero-argument function with <code>define -- name():</code>, close it with <code>--</code>, and call it with its name and parentheses.</p><pre><code>define -- greet():
+  output("Hello from Nexius!")
+--
+
+greet()</code></pre></section>
+<section class="panel docs-card" id="operators"><h2>Operators</h2><table class="docs-table"><thead><tr><th>Operator</th><th>Meaning</th></tr></thead><tbody><tr><td><code>+</code></td><td>Addition; joins values if either side is a string</td></tr><tr><td><code>-</code></td><td>Subtraction or unary negative</td></tr><tr><td><code>*</code></td><td>Multiplication</td></tr><tr><td><code>/</code></td><td>Division</td></tr><tr><td><code>#value</code></td><td>Square root</td></tr><tr><td><code>==</code></td><td>Equal</td></tr><tr><td><code>/=</code></td><td>Not equal</td></tr><tr><td><code>&lt;</code>, <code>&gt;</code></td><td>Less than / greater than</td></tr><tr><td><code>&lt;=</code>, <code>&gt;=</code></td><td>Less/greater than or equal</td></tr></tbody></table></section>
+<section class="panel docs-card" id="rules"><h2>Language rules</h2><ul><li>Assignment uses one equals sign: <code>score = 10</code>.</li><li>Equality comparisons use two equals signs: <code>score == 10</code>.</li><li><code>if</code>, <code>while</code>, and <code>define</code> headers end with a colon.</li><li>Every opened block must be closed with its own <code>--</code>.</li><li>Use the exact <code>-- ELIF --</code> and <code>-- ELSE --</code> marker forms.</li><li>Strings support straight single/double quotes and matching typographic curly quotes.</li><li>Indentation is for readability; block markers determine block boundaries in the current parser.</li><li>List indexes start at zero.</li></ul><div class="docs-note">If an error points to a line, check its punctuation and the block markers around it.</div></section>
+<section class="panel docs-card" id="limits"><h2>Current limitations</h2><p>Nexius is under active development. The browser preview parses Nexius into an internal syntax tree and executes it in a JavaScript-based runtime; it does not yet compile native machine code or WebAssembly.</p><ul><li>User-defined functions currently take no parameters and return no values.</li><li>General function calls inside expressions are not supported.</li><li>Lists support creation and indexed reads; mutation methods are not implemented.</li><li>Classes, imports, file I/O, and native compilation are not implemented yet.</li></ul></section>
+</div></div></main>
+<footer class="footer"><span>NEXIUS <span class="muted">· Language documentation</span></span><a class="docs-back" href="./">Back to Studio ↑</a></footer>
+</body></html>
