@@ -61,6 +61,14 @@ perm.on("w")release --:
 while -- checkfor("w") == true:
   output("W is currently held")
 --</code></pre><p><code>on(key)press</code> and <code>on(key)release</code> without <code>perm.</code> are one-shot listeners: they run once at the next matching event. With <code>perm.</code>, they run on every matching event until the program ends or is stopped. Key names are case-insensitive; the space bar is <code>"space"</code>.</p></section>
+<section class="panel docs-card" id="counted-loops"><h2>Counted loops</h2><p>Use <code>Loop --(amount):</code> to run a block a fixed number of times. The amount is evaluated once when the loop starts and must be a non-negative whole number. Close the block with <code>--</code>.</p><pre><code>Loop --(5):
+  output("This runs five times.")
+--
+
+count = 3
+Loop --(count):
+  output("Repeated:", count)
+--</code></pre></section>
 <section class="panel docs-card" id="functions"><h2>Functions</h2><p>Define a zero-argument function with <code>define -- name():</code>, close it with <code>--</code>, and call it with its name and parentheses.</p><pre><code>define -- greet():
   output("Hello from Nexius!")
 --
