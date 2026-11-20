@@ -100,7 +100,19 @@ if -- name == "Nexius" :
       const result = await NexiusCompiler.run(compiled, {
         output: value => addLine(String(value), "output"),
         input: (prompt, kind) => requestInput(prompt, kind),
-        clear: () => clearConsole()
+        clear: () => clearConsole(),
+        isStopped: () => stopped,
+        onKeyEvent: callback => {
+          const normalize = key => key === " " ? "space" : key.toLowerCase();
+          const down = event => { if (!event.repeat) callback("press", normalize(event.key)); };
+          const up = event => callback("release", normalize(event.key));
+          document.addEventListener("keydown", down);
+          document.addEventListener("keyup", up);
+          return () => {
+            document.removeEventListener("keydown", down);
+            document.removeEventListener("keyup", up);
+          };
+        }
       }, {maxSteps:100000});
       if (stopped) addLine("Execution stopped.", "prompt");
       else addLine("Program finished. " + result.steps + " instructions executed.", "prompt");
