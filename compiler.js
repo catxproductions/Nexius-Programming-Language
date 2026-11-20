@@ -220,8 +220,16 @@
         if (stopped) return;
         if (++steps > maxSteps) throw new NexiusError("Execution stopped: maximum instruction count reached (possible infinite loop).", node.line);
         if (node.type === "assign") {
-          if (node.expression.type === "call" && node.expression.name === "input") {
-            vars[node.name] = await readInput(node.expression.args.length ? evaluate(node.expression.args[0]) : "");
+          if (node.expression.type === "call" && (node.expression.name === "input" || node.expression.name === "numinput")) {
+            const isNumber = node.expression.name === "numinput";
+            const raw = await readInput(node.expression.args.length ? evaluate(node.expression.args[0]) : "", isNumber ? "number" : "text");
+            if (isNumber) {
+              const value = Number(raw);
+              if (String(raw).trim() === "" || !Number.isFinite(value)) {
+                throw new NexiusError("numinput() requires a valid number.", node.line);
+              }
+              vars[node.name] = value;
+            } else vars[node.name] = raw;
           } else vars[node.name] = evaluate(node.expression);
         } else if (node.type === "output") {
           if (node.expression) {
