@@ -64,17 +64,26 @@ if -- name == "Nexius" :
       return false;
     }
   }
-  function requestInput(prompt) {
+  function requestInput(prompt, kind) {
     if (prompt) addLine(String(prompt), "prompt");
     $("programInput").disabled = false; $("sendInput").disabled = false;
-    $("programInput").placeholder = "Type a value and press Enter...";
+    $("programInput").type = kind === "number" ? "number" : "text";
+    $("programInput").step = kind === "number" ? "any" : "";
+    $("programInput").placeholder = kind === "number" ? "Enter a number..." : "Type a value and press Enter...";
     $("programInput").focus();
     return new Promise(resolve => { waitingInput = resolve; });
   }
   function finishInput() {
     if (!waitingInput) return;
     const value = $("programInput").value;
+    if ($("programInput").type === "number" && (value.trim() === "" || !Number.isFinite(Number(value)))) {
+      addLine("Please enter a valid number.", "error");
+      $("programInput").focus();
+      return;
+    }
     $("programInput").value = "";
+    $("programInput").type = "text";
+    $("programInput").step = "";
     addLine("> " + value, "prompt");
     const resolve = waitingInput; waitingInput = null;
     $("programInput").disabled = true; $("sendInput").disabled = true;
@@ -90,7 +99,7 @@ if -- name == "Nexius" :
     try {
       const result = await NexiusCompiler.run(compiled, {
         output: value => addLine(String(value), "output"),
-        input: prompt => requestInput(prompt)
+        input: (prompt, kind) => requestInput(prompt, kind)
       }, {maxSteps:100000});
       if (stopped) addLine("Execution stopped.", "prompt");
       else addLine("Program finished. " + result.steps + " instructions executed.", "prompt");
