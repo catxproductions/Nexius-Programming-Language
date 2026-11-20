@@ -237,6 +237,7 @@
           while (evaluate(node.condition) && !stopped) {
             if (++iterations > maxSteps) throw new NexiusError("Loop limit reached; check your while condition.", node.line);
             await execute(node.body);
+            if (iterations % 256 === 0) await new Promise(resolve => setTimeout(resolve, 0));
           }
         } else if (node.type === "define") functions[node.name] = node.body;
         else if (node.type === "callStatement") {
