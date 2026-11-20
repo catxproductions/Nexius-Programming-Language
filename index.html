@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0b0d12">
+  <title>Nexius Studio</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="./"><span class="brand-mark">N</span><span>NEXIUS <small>STUDIO</small></span></a>
+    <div class="file-label"><span class="dot"></span> main.nx <span class="saved">LOCAL WORKSPACE</span></div>
+    <div class="top-actions"><button id="newBtn" class="quiet">New</button><button id="downloadBtn" class="quiet">Export .nx</button></div>
+  </header>
+  <main class="workspace">
+    <section class="editor-panel panel">
+      <div class="panel-heading"><div><span class="eyebrow">SOURCE EDITOR</span><h1>main.nx</h1></div><span class="language-pill">NEXIUS</span></div>
+      <div class="editor-wrap">
+        <div id="lineNumbers" class="line-numbers" aria-hidden="true">1</div>
+        <textarea id="source" spellcheck="false" autocapitalize="off" autocomplete="off" aria-label="Nexius source code"></textarea>
+      </div>
+      <div class="editor-footer"><span>CTRL + ENTER <span class="muted">to run</span></span><span id="cursorPosition">Ln 1, Col 1</span></div>
+    </section>
+    <aside class="right-column">
+      <section class="panel run-panel">
+        <div class="panel-heading compact"><div><span class="eyebrow">EXECUTION</span><h2>Run your program</h2></div><span id="statusDot" class="status-dot"></span></div>
+        <div class="button-row"><button id="compileBtn" class="secondary">Compile</button><button id="runBtn" class="primary"><span>▶</span> Run</button><button id="stopBtn" class="stop" disabled>Stop</button></div>
+        <div class="compile-state" id="compileState">Ready to compile</div>
+      </section>
+      <section class="panel console-panel">
+        <div class="console-heading"><div><span class="eyebrow">PROGRAM OUTPUT</span><h2>Console</h2></div><button id="clearBtn" class="icon-button" title="Clear console">Clear</button></div>
+        <div id="console" class="console" role="log" aria-live="polite"><div class="placeholder">Your program output will appear here.</div></div>
+        <form id="inputForm" class="input-row"><span class="input-prefix">›</span><input id="programInput" type="text" placeholder="Program input..." autocomplete="off" disabled><button type="submit" disabled id="sendInput">Send</button></form>
+      </section>
+      <section class="panel diagnostics-panel">
+        <div class="console-heading"><div><span class="eyebrow">DIAGNOSTICS</span><h2>Compiler messages</h2></div><span id="messageCount" class="count">0</span></div>
+        <div id="diagnostics" class="diagnostics"><div class="placeholder">No errors or warnings.</div></div>
+      </section>
+    </aside>
+  </main>
+  <footer class="footer"><span>NEXIUS STUDIO <span class="muted">· Browser compiler preview</span></span><span id="footerStatus">Ready</span></footer>
+  <script src="compiler.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
