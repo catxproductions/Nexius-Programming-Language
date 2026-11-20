@@ -170,7 +170,7 @@
         if ((m = s.match(/^([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.+)$/))) {
           body.push({ type: "assign", name: m[1], expression: parseExpression(m[2], r.line), line: r.line }); continue;
         }
-        if ((m = s.match(/^output\\s*\\((.*)\\)\\s*$/))) {
+        if ((m = s.match(/^output\s*\((.*)\)\s*$/))) {
           const call = m[1].trim() ? parseExpression("__nexius_output__(" + m[1] + ")", r.line) : null;
           body.push({ type: "output", expressions: call ? call.args : [], line: r.line }); continue;
         }
