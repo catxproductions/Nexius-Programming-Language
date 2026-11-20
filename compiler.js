@@ -41,11 +41,13 @@
       const rest = text.slice(i);
       const number = rest.match(/^(?:\d+(?:\.\d*)?|\.\d+)/);
       if (number) { tokens.push({ type: "number", value: Number(number[0]) }); i += number[0].length; continue; }
-      if (text[i] === '"' || text[i] === "'") {
-        const quote = text[i++]; let value = "";
+      if (text[i] === '"' || text[i] === "'" || text[i] === "“" || text[i] === "‘") {
+        const opening = text[i++];
+        const quote = opening === "“" ? "”" : opening === "‘" ? "’" : opening;
+        let value = "";
         while (i < text.length && text[i] !== quote) {
           if (text[i] === "\\" && i + 1 < text.length) {
-            const n = text[++i]; value += n === "n" ? "\n" : n === "t" ? "\t" : n; i++;
+            const n = text[++i]; value += n === "n" ? "\\n" : n === "t" ? "\\t" : n; i++;
           } else value += text[i++];
         }
         if (text[i] !== quote) throw new NexiusError("Unterminated string.", line);
