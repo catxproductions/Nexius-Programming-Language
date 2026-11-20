@@ -156,7 +156,7 @@
           if (p >= records.length || records[p].text !== "--") throw new NexiusError("Expected -- to close if block.", r.line);
           p++; body.push({ type: "if", branches, otherwise, line: r.line }); continue;
         }
-        if ((m = s.match(/^(perm\\.)?on\\s*\\((.*)\\)\\s*(press|release)\\s+--\\s*:\\s*$/i))) {
+        if ((m = s.match(/^(perm\.)?on\s*\((.*)\)\s*(press|release)\s+--\s*:\s*$/i))) {
           const keyExpression = parseExpression(m[2], r.line);
           const commands = block();
           if (p >= records.length || records[p].text !== "--") throw new NexiusError("Expected -- to close key event block.", r.line);
@@ -180,7 +180,7 @@
           const call = m[1].trim() ? parseExpression("__nexius_output__(" + m[1] + ")", r.line) : null;
           body.push({ type: "output", expressions: call ? call.args : [], line: r.line }); continue;
         }
-        if ((m = s.match(/^(perm\\.)?([A-Za-z_][A-Za-z0-9_]*)\\s*\\((.*)\\)\\s*$/))) {
+        if ((m = s.match(/^(perm\.)?([A-Za-z_][A-Za-z0-9_]*)\s*\((.*)\)\s*$/))) {
           const args = m[3].trim() ? parseExpression("__nexius_call__(" + m[3] + ")", r.line).args : [];
           body.push({ type: "callStatement", name: m[2], args, persistent: Boolean(m[1]), line: r.line }); continue;
         }
@@ -299,12 +299,17 @@
             if (iterations % 256 === 0) await new Promise(resolve => setTimeout(resolve, 0));
           }
         } else if (node.type === "define") functions[node.name] = node.body;
+        else if (node.type === "keyEvent") {
+          const key = normalizeKey(evaluate(node.keyExpression));
+          keyHandlers.push({ key, event: node.event, persistent: node.persistent, body: node.body, line: node.line, active: true });
+        }
         else if (node.type === "callStatement") {
           if (node.name === "clear") {
             if ((node.args || []).length !== 0) throw new NexiusError("clear() does not accept arguments.", node.line);
             if (hooks.clear) hooks.clear();
           } else if (node.name === "checkfor") {
             if ((node.args || []).length !== 1) throw new NexiusError("checkfor() requires exactly one key.", node.line);
+            if (!node.persistent) throw new NexiusError("Use perm.checkfor(key) to keep key tracking active until the program ends.", node.line);
             const key = normalizeKey(evaluate(node.args[0]));
             trackedKeys.add(key);
           } else if (node.name === "wait") {
