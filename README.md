@@ -1,69 +1,85 @@
 # Nexius Programming Language
-### control structures
-``` Nexius
-if -- condition:
-  command/s
--- ELIF -- condition:
-  commands
--- ELSE --:
-  command/s
---
 
-define -- funcrionName():
-  command/s
---
+Nexius is an experimental programming language with original syntax inspired by the readability of Python and the flexibility of JavaScript. The language is being designed with a long-term goal of native machine-code compilation and real-time event handling.
 
-while -- condition:
-  command/s
---
-```
-### commenting
-``` Nexius
+## Nexius Studio
+
+The repository now includes **Nexius Studio**, a browser-based editor and compiler/runtime preview.
+
+- Open the IDE: [Nexius Studio](https://catxproductions.github.io/Nexius-Programming-Language/)
+- Source editor with line numbers
+- Compile button with line-based diagnostics
+- Run button and interactive input/output console
+- Export source files as `.nx`
+
+## Current language draft
+
+### Comments
+```nexius
 ...
 This is a multiline comment
 ...
 
-,,,this is a single line comment
+,,, This is a single-line comment
 ```
-### variables
-``` Nexius
-variable_Name = value_in_number_or_string_or_equation
-```
-### Data
-``` Nexius
-"string"
-82 ,,, this is an example of a number
-a * b + c ,,, this is an example of an equation
-```
-### inputs and outputs
-``` Nexius
-inputVarName = input("optional text")
-output() ,,, in the parentheses you can put a string, variable, or number
-```
-### comparisons and calculations
-``` Nexius
-== ,,,is equal
-/= ,,,not equal
-<= ,,,is less than or equal to
->= ,,,is greater than or equal to
-<  ,,,is less than
->  ,,,is greater than
 
-+
--
-*
-/ ,,,divide
-# ,,,square root
+### Variables, input, and output
+```nexius
+playerName = input("What is your name? ")
+output("Hello, " + playerName)
 ```
-### setting up true or false Values
-``` Nexius
-booleanVarName = boolIf -- equation_or_something -- ,,,this sets the boolean variable to true if the equation is ever correct
+
+### Control structures
+Blocks are closed with `--`.
+
+```nexius
+if -- score >= 100:
+  output("You win!")
+-- ELIF -- score >= 50:
+  output("Almost there.")
+-- ELSE --:
+  output("Keep trying.")
+--
+
+while -- counter < 5:
+  output(counter)
+  counter = counter + 1
+--
 ```
-### Example Calculator !INCOMPLETE!
-``` Nexius
-,,, This is a calculator
-define -- calculate():
-define -- calculator():
-  firstin = input("first number: ")
-  secondin = input("
+
+### Functions
+```nexius
+define -- greet():
+  output("Hello from Nexius!")
+--
+
+greet()
 ```
+
+### Comparisons and calculations
+
+| Operator | Meaning |
+|---|---|
+| `==` | Equal |
+| `/=` | Not equal |
+| `<`, `>` | Less than, greater than |
+| `<=`, `>=` | Less/greater than or equal |
+| `+`, `-`, `*`, `/` | Arithmetic |
+| `#value` | Square root |
+
+Boolean expression syntax:
+```nexius
+isReady = boolIf -- score >= 100 --
+```
+
+## Current implementation status
+
+The browser preview currently parses Nexius source into an internal syntax tree and executes that tree in a JavaScript-based Nexius runtime. It is **not yet generating native machine code or WebAssembly**. That is a later compiler-backend milestone.
+
+Current preview supports variables, numeric/string expressions, comparisons, `input()`, `output()`, `if/ELIF/ELSE`, `while`, zero-argument functions, and the comment forms above. Function parameters, return values, arrays, pointers, real-time event listeners, and native compilation are not implemented yet.
+
+## Running locally
+
+Serve this folder with any static web server, or enable GitHub Pages for the repository using the `main` branch and root folder. Then open `index.html` in a browser.
+
+Nexius is under active development; syntax and runtime behavior may change as the language specification matures.
