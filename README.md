@@ -29,6 +29,21 @@ playerName = input("What is your name? ")
 output("Hello, " + playerName)
 ```
 
+### Lists and multiple output values
+
+Comma-separated values inside parentheses create a list. Use square brackets with a zero-based index to read an item.
+
+```nexius
+numbers = (10, 20, 30)
+names = ("Alex", "Sam", "Jordan")
+
+output("Numbers:", numbers)
+output("First number:", numbers[0])
+output("Names:", names)
+```
+
+Multiple arguments to `output()` are printed on one line, separated by spaces. Lists display with square brackets.
+
 ### Control structures
 Blocks are closed with `--`.
 
@@ -76,7 +91,7 @@ isReady = boolIf -- score >= 100 --
 
 The browser preview currently parses Nexius source into an internal syntax tree and executes that tree in a JavaScript-based Nexius runtime. It is **not yet generating native machine code or WebAssembly**. That is a later compiler-backend milestone.
 
-Current preview supports variables, numeric/string expressions, comparisons, `input()`, `output()`, `if/ELIF/ELSE`, `while`, zero-argument functions, and the comment forms above. Function parameters, return values, arrays, pointers, real-time event listeners, and native compilation are not implemented yet.
+Current preview supports variables, numeric/string expressions, comparisons, lists with indexed access, `input()`, `numinput()`, multi-value `output()`, `if/ELIF/ELSE`, `while`, zero-argument functions, and the comment forms above. Function parameters, return values, pointers, real-time event listeners, and native compilation are not implemented yet.
 
 ## Running locally
 
