@@ -99,7 +99,8 @@ if -- name == "Nexius" :
     try {
       const result = await NexiusCompiler.run(compiled, {
         output: value => addLine(String(value), "output"),
-        input: (prompt, kind) => requestInput(prompt, kind)
+        input: (prompt, kind) => requestInput(prompt, kind),
+        clear: () => clearConsole()
       }, {maxSteps:100000});
       if (stopped) addLine("Execution stopped.", "prompt");
       else addLine("Program finished. " + result.steps + " instructions executed.", "prompt");
