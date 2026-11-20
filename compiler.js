@@ -174,8 +174,9 @@
           const call = m[1].trim() ? parseExpression("__nexius_output__(" + m[1] + ")", r.line) : null;
           body.push({ type: "output", expressions: call ? call.args : [], line: r.line }); continue;
         }
-        if ((m = s.match(/^([A-Za-z_][A-Za-z0-9_]*)\s*\(\s*\)\s*$/))) {
-          body.push({ type: "callStatement", name: m[1], line: r.line }); continue;
+        if ((m = s.match(/^([A-Za-z_][A-Za-z0-9_]*)\s*\((.*)\)\s*$/))) {
+          const args = m[2].trim() ? parseExpression("__nexius_call__(" + m[2] + ")", r.line).args : [];
+          body.push({ type: "callStatement", name: m[1], args, line: r.line }); continue;
         }
         throw new NexiusError("I don't understand this statement: " + s, r.line);
       }
@@ -285,8 +286,22 @@
           }
         } else if (node.type === "define") functions[node.name] = node.body;
         else if (node.type === "callStatement") {
-          if (!functions[node.name]) throw new NexiusError("Function '" + node.name + "' is not defined.", node.line);
-          await execute(functions[node.name]);
+          if (node.name === "clear") {
+            if ((node.args || []).length !== 0) throw new NexiusError("clear() does not accept arguments.", node.line);
+            if (hooks.clear) hooks.clear();
+          } else if (node.name === "wait") {
+            if ((node.args || []).length !== 1) throw new NexiusError("wait() requires exactly one time value in seconds.", node.line);
+            const seconds = Number(evaluate(node.args[0]));
+            if (!Number.isFinite(seconds) || seconds < 0) throw new NexiusError("wait() requires a non-negative number of seconds.", node.line);
+            const endTime = Date.now() + seconds * 1000;
+            while (!stopped && Date.now() < endTime) {
+              await new Promise(resolve => setTimeout(resolve, Math.min(50, Math.max(0, endTime - Date.now()))));
+            }
+          } else {
+            if (!functions[node.name]) throw new NexiusError("Function '" + node.name + "' is not defined.", node.line);
+            if ((node.args || []).length !== 0) throw new NexiusError("User-defined functions do not accept arguments yet.", node.line);
+            await execute(functions[node.name]);
+          }
         }
       }
     }
