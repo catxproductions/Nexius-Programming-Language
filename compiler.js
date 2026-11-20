@@ -162,6 +162,12 @@
           if (p >= records.length || records[p].text !== "--") throw new NexiusError("Expected -- to close key event block.", r.line);
           p++; body.push({ type: "keyEvent", keyExpression, event: m[3].toLowerCase(), persistent: Boolean(m[1]), body: commands, line: r.line }); continue;
         }
+        if ((m = s.match(/^loop\s+--\s*\((.*)\)\s*:\s*$/i))) {
+          const amount = parseExpression(m[1], r.line);
+          const commands = block();
+          if (p >= records.length || records[p].text !== "--") throw new NexiusError("Expected -- to close Loop block.", r.line);
+          p++; body.push({ type: "repeat", amount, body: commands, line: r.line }); continue;
+        }
         if ((m = s.match(/^while\s+--\s*(.*?)\s*:\s*$/i))) {
           const commands = block();
           if (p >= records.length || records[p].text !== "--") throw new NexiusError("Expected -- to close while block.", r.line);
@@ -291,6 +297,16 @@
           let matched = false;
           for (const branch of node.branches) if (evaluate(branch.condition)) { matched = true; await execute(branch.body); break; }
           if (!matched) await execute(node.otherwise);
+        } else if (node.type === "repeat") {
+          const amount = Number(evaluate(node.amount));
+          if (!Number.isFinite(amount) || !Number.isInteger(amount) || amount < 0) {
+            throw new NexiusError("Loop amount must be a non-negative whole number.", node.line);
+          }
+          if (amount > maxSteps) throw new NexiusError("Loop amount exceeds the execution limit.", node.line);
+          for (let iteration = 0; iteration < amount && !shouldStop(); iteration++) {
+            await execute(node.body);
+            if ((iteration + 1) % 256 === 0) await new Promise(resolve => setTimeout(resolve, 0));
+          }
         } else if (node.type === "while") {
           let iterations = 0;
           while (evaluate(node.condition) && !shouldStop()) {
