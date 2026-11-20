@@ -124,7 +124,7 @@ if -- name == "Nexius" :
       add("(value1, value2)", "Create a list", "()");
     }
     suggestionItems = items.slice(0, 7);
-    selectedSuggestion = suggestionItems.length ? 0 : -1;
+    selectedSuggestion = -1;
     renderRecommendations();
   }
   function renderRecommendations() {
