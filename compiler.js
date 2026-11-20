@@ -53,7 +53,7 @@
       }
       const op = ["==", "/=", "<=", ">=", "--"].find(x => rest.startsWith(x));
       if (op) { tokens.push({ type: "op", value: op }); i += op.length; continue; }
-      if ("+-*/#<>()".includes(text[i])) { tokens.push({ type: "op", value: text[i++] }); continue; }
+      if ("+-*/#<>()[], ".includes(text[i])) { const value = text[i++]; if (value !== " ") tokens.push({ type: "op", value }); continue; }
       const id = rest.match(/^[A-Za-z_][A-Za-z0-9_]*/);
       if (id) { tokens.push({ type: "id", value: id[0] }); i += id[0].length; continue; }
       throw new NexiusError("Unexpected character '" + text[i] + "' in expression.", line);
@@ -89,15 +89,32 @@
         return { type: "variable", name: t.value };
       }
       if (t.value === "(") {
-        const e = expression(0);
+        if (peek().value === ")") { take(); return { type: "list", items: [] }; }
+        const first = expression(0);
+        if (peek().value === ",") {
+          const items = [first];
+          while (peek().value === ",") {
+            take();
+            if (peek().value === ")") break;
+            items.push(expression(0));
+          }
+          if (peek().value !== ")") throw new NexiusError("Expected closing ) after list values.", line);
+          take(); return { type: "list", items };
+        }
         if (peek().value !== ")") throw new NexiusError("Expected closing ).", line);
-        take(); return e;
+        take(); return first;
       }
+      if (t.value === "[") throw new NexiusError("A list index must follow a value, like numbers[0].", line);
       if (t.value === "-" || t.value === "#") return { type: "unary", op: t.value, right: expression(4) };
       throw new NexiusError("Expected a value in expression.", line);
     }
     function expression(min) {
       let left = primary();
+      while (peek().value === "[") {
+        take(); const index = expression(0);
+        if (peek().value !== "]") throw new NexiusError("Expected ] after list index.", line);
+        take(); left = { type: "index", target: left, index };
+      }
       while (peek().type === "op" && PRECEDENCE[peek().value] !== undefined && PRECEDENCE[peek().value] >= min) {
         const op = take().value; const p = PRECEDENCE[op];
         const right = expression(p + 1);
@@ -151,8 +168,9 @@
         if ((m = s.match(/^([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.+)$/))) {
           body.push({ type: "assign", name: m[1], expression: parseExpression(m[2], r.line), line: r.line }); continue;
         }
-        if ((m = s.match(/^output\s*\((.*)\)\s*$/))) {
-          body.push({ type: "output", expression: m[1].trim() ? parseExpression(m[1], r.line) : null, line: r.line }); continue;
+        if ((m = s.match(/^output\\s*\\((.*)\\)\\s*$/))) {
+          const call = m[1].trim() ? parseExpression("__nexius_output__(" + m[1] + ")", r.line) : null;
+          body.push({ type: "output", expressions: call ? call.args : [], line: r.line }); continue;
         }
         if ((m = s.match(/^([A-Za-z_][A-Za-z0-9_]*)\s*\(\s*\)\s*$/))) {
           body.push({ type: "callStatement", name: m[1], line: r.line }); continue;
@@ -175,6 +193,12 @@
       (x.branches ? x.branches.reduce((a, b) => a + count(b.body), 0) : 0), 0);
   }
 
+  function formatOutput(value) {
+    if (Array.isArray(value)) return "[" + value.map(formatOutput).join(", ") + "]";
+    if (value === null || value === undefined) return String(value);
+    return String(value);
+  }
+
   async function run(compiled, hooks, options) {
     hooks = hooks || {}; options = options || {};
     const vars = Object.create(null), functions = Object.create(null);
@@ -188,6 +212,13 @@
     function evaluate(node) {
       if (!node) return null;
       if (node.type === "literal") return node.value;
+      if (node.type === "list") return node.items.map(evaluate);
+      if (node.type === "index") {
+        const target = evaluate(node.target), index = evaluate(node.index);
+        if (!Array.isArray(target)) throw new NexiusError("Only lists can be indexed.");
+        if (!Number.isInteger(Number(index)) || Number(index) < 0 || Number(index) >= target.length) throw new NexiusError("List index is out of range.");
+        return target[Number(index)];
+      }
       if (node.type === "variable") {
         if (!(node.name in vars)) throw new NexiusError("Variable '" + node.name + "' is not defined.");
         return vars[node.name];
@@ -232,10 +263,13 @@
             } else vars[node.name] = raw;
           } else vars[node.name] = evaluate(node.expression);
         } else if (node.type === "output") {
-          if (node.expression) {
-            const value = evaluate(node.expression);
-            output(value && typeof value.then === "function" ? await value : value);
-          } else output("");
+          const values = [];
+          for (const expression of node.expressions || []) {
+            let value = evaluate(expression);
+            if (value && typeof value.then === "function") value = await value;
+            values.push(formatOutput(value));
+          }
+          output(values.join(" "));
         } else if (node.type === "if") {
           let matched = false;
           for (const branch of node.branches) if (evaluate(branch.condition)) { matched = true; await execute(branch.body); break; }
