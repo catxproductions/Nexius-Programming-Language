@@ -40,10 +40,30 @@ a * b + c ,,, this is an example of an equation
 inputVarName = input("optional text")
 output() ,,, in the parentheses you can put a string, variable, or number
 ```
-### comparisons
+### comparisons and calculations
+``` Nexius
+== ,,,is equal
+/= ,,,not equal
+<= ,,,is less than or equal to
+>= ,,,is greater than or equal to
+<  ,,,is less than
+>  ,,,is greater than
 
++
+-
+*
+/ ,,,divide
+# ,,,square root
+```
 ### setting up true or false Values
 ``` Nexius
 booleanVarName = boolIf -- equation_or_something -- ,,,this sets the boolean variable to true if the equation is ever correct
 ```
-### Example Calculator
+### Example Calculator !INCOMPLETE!
+``` Nexius
+,,, This is a calculator
+define -- calculate():
+define -- calculator():
+  firstin = input("first number: ")
+  secondin = input("
+```
