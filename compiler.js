@@ -51,7 +51,7 @@
         if (text[i] !== quote) throw new NexiusError("Unterminated string.", line);
         i++; tokens.push({ type: "string", value }); continue;
       }
-      const op = ["==", "/=", "<=", ">="].find(x => rest.startsWith(x));
+      const op = ["==", "/=", "<=", ">=", "--"].find(x => rest.startsWith(x));
       if (op) { tokens.push({ type: "op", value: op }); i += op.length; continue; }
       if ("+-*/#<>()".includes(text[i])) { tokens.push({ type: "op", value: text[i++] }); continue; }
       const id = rest.match(/^[A-Za-z_][A-Za-z0-9_]*/);
