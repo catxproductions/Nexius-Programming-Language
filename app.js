@@ -163,7 +163,8 @@ if -- name == "Nexius" :
     selectedSuggestion = (selectedSuggestion + direction + suggestionItems.length) % suggestionItems.length;
     renderRecommendations();
   }
-\n  function compile() {
+
+  function compile() {
     try {
       compiled = NexiusCompiler.compile(source.value);
       showDiagnostics([]);
@@ -257,8 +258,41 @@ if -- name == "Nexius" :
   source.addEventListener("click", () => { updateCursor(); buildRecommendations(); }); source.addEventListener("keyup", () => { updateCursor(); buildRecommendations(); });
   source.addEventListener("scroll", () => { $("lineNumbers").scrollTop = source.scrollTop; });
   source.addEventListener("keydown", e => {
-    if (e.key === "Tab") { e.preventDefault(); const a=source.selectionStart,b=source.selectionEnd; source.setRangeText("  ",a,b,"end"); updateLines(); }
-    if ((e.ctrlKey || e.metaKey) && e.key === "Enter") { e.preventDefault(); run(); }
+    if (e.key === "Tab") {
+      e.preventDefault();
+      const start = source.selectionStart, end = source.selectionEnd;
+      if (start !== end) {
+        const lineStart = source.value.lastIndexOf("\n", start - 1) + 1;
+        const selected = source.value.slice(start, end);
+        const lineCount = selected.split("\n").length;
+        const insertAt = lineStart;
+        source.setRangeText("  " + selected.replace(/\n/g, "\n  "), insertAt, end, "select");
+        source.setSelectionRange(start + 2, start + 2 + selected.length + (lineCount - 1) * 2);
+      } else {
+        source.setRangeText("  ", start, end, "end");
+      }
+      compiled = null;
+      updateLines(); updateCursor(); buildRecommendations();
+      setStatus("Unsaved changes", true);
+      return;
+    }
+    if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
+      e.preventDefault();
+      run();
+      return;
+    }
+    if (e.key === "Enter" && !e.shiftKey && !e.altKey && !e.ctrlKey && !e.metaKey) {
+      e.preventDefault();
+      const start = source.selectionStart, end = source.selectionEnd;
+      const lineStart = source.value.lastIndexOf("\n", start - 1) + 1;
+      const linePrefix = source.value.slice(lineStart, start);
+      const indent = (linePrefix.match(/^\s*/) || [""])[0];
+      const nextIndent = /:\s*$/.test(linePrefix.trim()) ? indent + "  " : indent;
+      source.setRangeText("\n" + nextIndent, start, end, "end");
+      compiled = null;
+      updateLines(); updateCursor(); buildRecommendations();
+      setStatus("Unsaved changes", true);
+    }
   });
   document.addEventListener("keydown", e => { if (e.key === "Escape" && running) $("stopBtn").click(); });
   updateLines(); updateCursor(); buildRecommendations();
