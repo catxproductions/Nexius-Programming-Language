@@ -11,6 +11,7 @@ The repository now includes **Nexius Studio**, a browser-based editor and compil
 - Compile button with line-based diagnostics
 - Run button and interactive input/output console
 - Export source files as `.nx`
+- Open the [Nexius Language Documentation](https://catxproductions.github.io/Nexius-Programming-Language/docs.html) for syntax, commands, and language rules
 
 ## Current language draft
 
