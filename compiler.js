@@ -156,6 +156,12 @@
           if (p >= records.length || records[p].text !== "--") throw new NexiusError("Expected -- to close if block.", r.line);
           p++; body.push({ type: "if", branches, otherwise, line: r.line }); continue;
         }
+        if ((m = s.match(/^(perm\\.)?on\\s*\\((.*)\\)\\s*(press|release)\\s+--\\s*:\\s*$/i))) {
+          const keyExpression = parseExpression(m[2], r.line);
+          const commands = block();
+          if (p >= records.length || records[p].text !== "--") throw new NexiusError("Expected -- to close key event block.", r.line);
+          p++; body.push({ type: "keyEvent", keyExpression, event: m[3].toLowerCase(), persistent: Boolean(m[1]), body: commands, line: r.line }); continue;
+        }
         if ((m = s.match(/^while\s+--\s*(.*?)\s*:\s*$/i))) {
           const commands = block();
           if (p >= records.length || records[p].text !== "--") throw new NexiusError("Expected -- to close while block.", r.line);
@@ -174,9 +180,9 @@
           const call = m[1].trim() ? parseExpression("__nexius_output__(" + m[1] + ")", r.line) : null;
           body.push({ type: "output", expressions: call ? call.args : [], line: r.line }); continue;
         }
-        if ((m = s.match(/^([A-Za-z_][A-Za-z0-9_]*)\s*\((.*)\)\s*$/))) {
-          const args = m[2].trim() ? parseExpression("__nexius_call__(" + m[2] + ")", r.line).args : [];
-          body.push({ type: "callStatement", name: m[1], args, line: r.line }); continue;
+        if ((m = s.match(/^(perm\\.)?([A-Za-z_][A-Za-z0-9_]*)\\s*\\((.*)\\)\\s*$/))) {
+          const args = m[3].trim() ? parseExpression("__nexius_call__(" + m[3] + ")", r.line).args : [];
+          body.push({ type: "callStatement", name: m[2], args, persistent: Boolean(m[1]), line: r.line }); continue;
         }
         throw new NexiusError("I don't understand this statement: " + s, r.line);
       }
@@ -206,7 +212,11 @@
     hooks = hooks || {}; options = options || {};
     const vars = Object.create(null), functions = Object.create(null);
     let stopped = false, steps = 0;
+    const keyStates = new Map(), keyHandlers = [], trackedKeys = new Set();
+    let eventQueue = Promise.resolve(), eventError = null;
     const maxSteps = options.maxSteps || 100000;
+    const shouldStop = () => stopped || Boolean(hooks.isStopped && hooks.isStopped());
+    const normalizeKey = value => String(value).toLowerCase() === " " ? "space" : String(value).toLowerCase();
     const output = (value) => hooks.output && hooks.output(String(value));
     const readInput = async (prompt) => {
       if (!hooks.input) return "";
@@ -245,13 +255,17 @@
       }
       if (node.type === "call") {
         if (node.name === "input") return readInput(node.args.length ? evaluate(node.args[0]) : "");
+        if (node.name === "checkfor") {
+          if (node.args.length !== 1) throw new NexiusError("checkfor() requires exactly one key.");
+          return Boolean(keyStates.get(normalizeKey(evaluate(node.args[0]))));
+        }
         throw new NexiusError("Unknown function '" + node.name + "'.");
       }
       return null;
     }
     async function execute(nodes) {
       for (const node of nodes) {
-        if (stopped) return;
+        if (shouldStop()) { stopped = true; return; }
         if (++steps > maxSteps) throw new NexiusError("Execution stopped: maximum instruction count reached (possible infinite loop).", node.line);
         if (node.type === "assign") {
           if (node.expression.type === "call" && (node.expression.name === "input" || node.expression.name === "numinput")) {
@@ -279,7 +293,7 @@
           if (!matched) await execute(node.otherwise);
         } else if (node.type === "while") {
           let iterations = 0;
-          while (evaluate(node.condition) && !stopped) {
+          while (evaluate(node.condition) && !shouldStop()) {
             if (++iterations > maxSteps) throw new NexiusError("Loop limit reached; check your while condition.", node.line);
             await execute(node.body);
             if (iterations % 256 === 0) await new Promise(resolve => setTimeout(resolve, 0));
@@ -289,12 +303,16 @@
           if (node.name === "clear") {
             if ((node.args || []).length !== 0) throw new NexiusError("clear() does not accept arguments.", node.line);
             if (hooks.clear) hooks.clear();
+          } else if (node.name === "checkfor") {
+            if ((node.args || []).length !== 1) throw new NexiusError("checkfor() requires exactly one key.", node.line);
+            const key = normalizeKey(evaluate(node.args[0]));
+            trackedKeys.add(key);
           } else if (node.name === "wait") {
             if ((node.args || []).length !== 1) throw new NexiusError("wait() requires exactly one time value in seconds.", node.line);
             const seconds = Number(evaluate(node.args[0]));
             if (!Number.isFinite(seconds) || seconds < 0) throw new NexiusError("wait() requires a non-negative number of seconds.", node.line);
             const endTime = Date.now() + seconds * 1000;
-            while (!stopped && Date.now() < endTime) {
+            while (!shouldStop() && Date.now() < endTime) {
               await new Promise(resolve => setTimeout(resolve, Math.min(50, Math.max(0, endTime - Date.now()))));
             }
           } else {
@@ -305,8 +323,33 @@
         }
       }
     }
-    await execute(compiled.ast);
-    return { variables: vars, steps, stopped };
+    let removeKeyListener = null;
+    if (hooks.onKeyEvent) {
+      removeKeyListener = hooks.onKeyEvent((eventName, rawKey) => {
+        const key = normalizeKey(rawKey);
+        keyStates.set(key, eventName === "press");
+        const matches = keyHandlers.filter(handler => handler.active && handler.key === key && handler.event === eventName);
+        for (const handler of matches) {
+          if (!handler.persistent) handler.active = false;
+          eventQueue = eventQueue.then(async () => {
+            if (!shouldStop()) await execute(handler.body);
+          }).catch(error => { eventError = error; stopped = true; });
+        }
+      });
+    }
+    try {
+      await execute(compiled.ast);
+      const hasPendingEvents = () => keyHandlers.some(handler => handler.active) || trackedKeys.size > 0;
+      while (!shouldStop() && hasPendingEvents()) {
+        if (eventError) throw eventError;
+        await new Promise(resolve => setTimeout(resolve, 25));
+      }
+      await eventQueue;
+      if (eventError) throw eventError;
+      return { variables: vars, steps, stopped: shouldStop() };
+    } finally {
+      if (typeof removeKeyListener === "function") removeKeyListener();
+    }
   }
   window.NexiusCompiler = { compile, run, NexiusError };
 })();
