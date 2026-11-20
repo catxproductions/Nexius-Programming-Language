@@ -48,7 +48,122 @@ if -- name == "Nexius" :
     const before = source.value.slice(0, source.selectionStart).split("\n");
     $("cursorPosition").textContent = "Ln " + before.length + ", Col " + (before[before.length-1].length+1);
   }
-  function compile() {
+
+  // Context-aware Nexius recommendations
+  let suggestionItems = [], selectedSuggestion = -1;
+  const suggestionPanel = $("suggestions");
+  function getEditorContext() {
+    const cursor = source.selectionStart;
+    const before = source.value.slice(0, cursor);
+    const lines = before.split("\n");
+    const current = lines[lines.length - 1];
+    const indent = (current.match(/^\s*/) || [""])[0];
+    const prior = lines.slice(0, -1);
+    const previous = [...prior].reverse().find(line => line.trim());
+    const openBlocks = [];
+    for (const line of source.value.slice(0, cursor).split("\n")) {
+      const t = line.trim();
+      if (/^(if\s+--|while\s+--|loop\s+--|define\s+--|(?:perm\.)?on\s*\().*:\s*$/i.test(t)) openBlocks.push(t);
+      else if (t === "--" && openBlocks.length) openBlocks.pop();
+    }
+    const variables = [...new Set([...source.value.matchAll(/^\s*([A-Za-z_][A-Za-z0-9_]*)\s*=/gm)].map(m => m[1]))];
+    const functions = [...new Set([...source.value.matchAll(/^\s*define\s+--\s*([A-Za-z_][A-Za-z0-9_]*)\s*\(/gim)].map(m => m[1]))];
+    return {cursor, current, indent, prior, previous, openBlocks, variables, functions};
+  }
+  function buildRecommendations() {
+    const c = getEditorContext();
+    const typed = c.current.slice(c.indent.length);
+    const lower = typed.toLowerCase();
+    const items = [];
+    const add = (label, detail, insert, kind = "code") => items.push({label, detail, insert, kind});
+    const commandList = [
+      ["output(value)", "Print a value to the console", "output()"],
+      ["input(prompt)", "Read text from the user", 'input("")'],
+      ["numinput(prompt)", "Read a number from the user", 'numinput("")'],
+      ["wait(seconds)", "Pause program execution", "wait(1)"],
+      ["clear()", "Clear the program console", "clear()"],
+      ["checkfor(key)", "Check whether a key is held", 'checkfor("w")'],
+      ["perm.checkfor(key)", "Track a key until the program ends", 'perm.checkfor("w")']
+    ];
+    const structures = [
+      ["if -- condition:", "Start a conditional block", "if -- condition:\n" + c.indent + "  \n" + c.indent + "--"],
+      ["while -- condition:", "Repeat while a condition is true", "while -- condition:\n" + c.indent + "  \n" + c.indent + "--"],
+      ["Loop --(amount):", "Repeat a fixed number of times", "Loop --(5):\n" + c.indent + "  \n" + c.indent + "--"],
+      ["define -- name():", "Define a reusable function", "define -- functionName():\n" + c.indent + "  \n" + c.indent + "--"],
+      ['on("key")press --:', "Run code when a key is pressed", 'on("w")press --:\n' + c.indent + "  \n" + c.indent + "--"],
+      ['on("key")release --:', "Run code when a key is released", 'on("w")release --:\n' + c.indent + "  \n" + c.indent + "--"]
+    ];
+    const isBlank = !typed.trim();
+    const matchesPrefix = (value) => value.toLowerCase().startsWith(lower);
+    if (isBlank) {
+      if (c.previous && /:\s*$/.test(c.previous.trim())) {
+        add("Indent block body", "Add two spaces for the next block command", "  ", "indent");
+      }
+      if (c.openBlocks.length) add("Close current block  --", "Finish the open Nexius block", "--", "block");
+      for (const [label,detail,insert] of structures) add(label,detail,insert,"structure");
+      for (const [label,detail,insert] of commandList) add(label,detail,insert);
+      for (const name of c.variables) add(name, "Use an existing variable", name, "variable");
+      for (const name of c.functions) add(name + "()", "Call your function", name + "()", "function");
+    } else {
+      for (const [label,detail,insert] of [...structures,...commandList]) {
+        const word = label.split(/[ (]/)[0];
+        if (matchesPrefix(word)) add(label,detail,insert,structures.some(x => x[0] === label) ? "structure" : "code");
+      }
+      for (const name of c.variables) if (matchesPrefix(name)) add(name,"Use an existing variable",name,"variable");
+      for (const name of c.functions) if (matchesPrefix(name)) add(name + "()","Call your function",name + "()","function");
+      if (lower === "--" || lower === "-") add("--","Close the current block","--","block");
+      if (/^(if|while|loop|define|on|perm\.)/.test(lower) && items.length === 0) {
+        for (const [label,detail,insert] of structures) if (label.toLowerCase().startsWith(lower)) add(label,detail,insert,"structure");
+      }
+    }
+    // Offer common variable names after an assignment has started.
+    if (/^[A-Za-z_][A-Za-z0-9_]*\s*=\s*$/.test(typed)) {
+      add('input("prompt")', "Assign text input to this variable", 'input("")');
+      add('numinput("prompt")', "Assign numeric input to this variable", 'numinput("")');
+      add("true / false", "Assign a Boolean value", "true");
+      add("(value1, value2)", "Create a list", "()");
+    }
+    suggestionItems = items.slice(0, 7);
+    selectedSuggestion = suggestionItems.length ? 0 : -1;
+    renderRecommendations();
+  }
+  function renderRecommendations() {
+    suggestionPanel.replaceChildren();
+    if (!suggestionItems.length) {
+      const empty = document.createElement("div"); empty.className = "suggestion-empty";
+      empty.textContent = "Start typing for Nexius syntax and completion suggestions.";
+      suggestionPanel.appendChild(empty); return;
+    }
+    const heading = document.createElement("div"); heading.className = "suggestion-heading";
+    heading.textContent = "RECOMMENDED NEXT STEPS"; suggestionPanel.appendChild(heading);
+    suggestionItems.forEach((item,index) => {
+      const button = document.createElement("button");
+      button.type = "button"; button.className = "suggestion-item" + (index === selectedSuggestion ? " selected" : "");
+      const title = document.createElement("span"); title.className = "suggestion-title"; title.textContent = item.label;
+      const detail = document.createElement("span"); detail.className = "suggestion-detail"; detail.textContent = item.detail;
+      button.append(title,detail);
+      button.addEventListener("mousedown", event => event.preventDefault());
+      button.addEventListener("click", () => applySuggestion(index));
+      suggestionPanel.appendChild(button);
+    });
+  }
+  function applySuggestion(index) {
+    const item = suggestionItems[index]; if (!item) return;
+    const cursor = source.selectionStart;
+    const lineStart = source.value.lastIndexOf("\n", cursor - 1) + 1;
+    const line = source.value.slice(lineStart, cursor);
+    const indentLength = (line.match(/^\s*/) || [""])[0].length;
+    const start = item.kind === "indent" ? cursor : lineStart + indentLength;
+    source.setRangeText(item.insert, start, cursor, "end");
+    source.focus(); compiled = null; updateLines(); updateCursor(); setStatus("Unsaved changes", true);
+    buildRecommendations();
+  }
+  function moveSuggestionSelection(direction) {
+    if (!suggestionItems.length) return;
+    selectedSuggestion = (selectedSuggestion + direction + suggestionItems.length) % suggestionItems.length;
+    renderRecommendations();
+  }
+\n  function compile() {
     try {
       compiled = NexiusCompiler.compile(source.value);
       showDiagnostics([]);
@@ -138,13 +253,13 @@ if -- name == "Nexius" :
     const url = URL.createObjectURL(blob); const a = document.createElement("a");
     a.href = url; a.download = "main.nx"; a.click(); URL.revokeObjectURL(url);
   });
-  source.addEventListener("input", () => { compiled = null; updateLines(); updateCursor(); setStatus("Unsaved changes", true); });
-  source.addEventListener("click", updateCursor); source.addEventListener("keyup", updateCursor);
+  source.addEventListener("input", () => { compiled = null; updateLines(); updateCursor(); setStatus("Unsaved changes", true); buildRecommendations(); });
+  source.addEventListener("click", () => { updateCursor(); buildRecommendations(); }); source.addEventListener("keyup", () => { updateCursor(); buildRecommendations(); });
   source.addEventListener("scroll", () => { $("lineNumbers").scrollTop = source.scrollTop; });
   source.addEventListener("keydown", e => {
     if (e.key === "Tab") { e.preventDefault(); const a=source.selectionStart,b=source.selectionEnd; source.setRangeText("  ",a,b,"end"); updateLines(); }
     if ((e.ctrlKey || e.metaKey) && e.key === "Enter") { e.preventDefault(); run(); }
   });
   document.addEventListener("keydown", e => { if (e.key === "Escape" && running) $("stopBtn").click(); });
-  updateLines(); updateCursor();
+  updateLines(); updateCursor(); buildRecommendations();
 })();
