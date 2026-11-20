@@ -44,6 +44,18 @@ output("Names:", names)
 
 Multiple arguments to `output()` are printed on one line, separated by spaces. Lists display with square brackets.
 
+### Console control
+
+`clear()` clears the program console. `wait(time)` pauses execution for the given number of seconds before continuing.
+
+```nexius
+output("Starting...")
+wait(2)
+output("Two seconds later.")
+clear()
+output("The console was cleared.")
+```
+
 ### Control structures
 Blocks are closed with `--`.
 
@@ -91,7 +103,7 @@ isReady = boolIf -- score >= 100 --
 
 The browser preview currently parses Nexius source into an internal syntax tree and executes that tree in a JavaScript-based Nexius runtime. It is **not yet generating native machine code or WebAssembly**. That is a later compiler-backend milestone.
 
-Current preview supports variables, numeric/string expressions, comparisons, lists with indexed access, `input()`, `numinput()`, multi-value `output()`, `if/ELIF/ELSE`, `while`, zero-argument functions, and the comment forms above. Function parameters, return values, pointers, real-time event listeners, and native compilation are not implemented yet.
+Current preview supports variables, numeric/string expressions, comparisons, lists with indexed access, `input()`, `numinput()`, multi-value `output()`, `clear()`, `wait(time)`, `if/ELIF/ELSE`, `while`, zero-argument functions, and the comment forms above. Function parameters, return values, pointers, real-time event listeners, and native compilation are not implemented yet.
 
 ## Running locally
 
