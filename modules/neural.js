@@ -72,12 +72,13 @@
           }
         }
         trace.consumed=true;
+        if(trace.observationRecord)trace.observationRecord.feedback=signal*strength;
         model.feedbackCount++;
       }
       return {
         declareLayer(node) {
           let m=models.get(node.model);
-          if(!m){m={input:null,hidden:null,output:null,assembled:false,lastInference:null,feedbackCount:0};models.set(node.model,m);}
+          if(!m){m={input:null,hidden:null,output:null,assembled:false,lastInference:null,feedbackCount:0,observations:[]};models.set(node.model,m);}
           if(m.assembled)throw new Error("Model '"+node.model+"' is already assembled.");
           const key=node.layer==="inputlayer"?"input":node.layer==="outputlayer"?"output":"hidden";
           if(m[key]!==null)throw new Error("Model '"+node.model+"' already has a "+key+" declaration.");
@@ -105,7 +106,14 @@
           const m=modelFor(name);
           if(!m.assembled)throw new Error("Assemble the neural model before observing it.");
           if(!m.lastInference)throw new Error("Run neural.getoutN() before neural.observe().");
-          m.lastInference.observed=true;
+          const trace=m.lastInference;
+          if(!trace.observed) {
+            trace.observed=true;
+            const record={activations:trace.activations.map(layer=>layer.slice()),outputs:trace.outputs.slice(),feedback:null};
+            m.observations.push(record);
+            if(m.observations.length>128)m.observations.shift();
+            trace.observationRecord=record;
+          }
         },
         reward(name,strength=1) {
           const m=modelFor(name);
