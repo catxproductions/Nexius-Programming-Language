@@ -96,6 +96,11 @@
           for(let i=1;i<sizes.length;i++){m.weights.push(matrix(sizes[i],sizes[i-1]));m.biases.push(Array.from({length:sizes[i]},()=> (Math.random()*2-1)*0.1));}
           m.assembled=true;return sizes;
         },
+        run(name,vars) {
+          const m=modelFor(name);
+          if(!m.assembled)throw new Error("Call neural.assemble("+name+") before running it.");
+          return forward(m,vars).slice();
+        },
         getOutput(name,index,vars) {
           const m=modelFor(name);
           if(!m.assembled)throw new Error("Call neural.assemble("+name+") before requesting outputs.");
