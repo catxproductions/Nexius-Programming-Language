@@ -199,6 +199,6 @@ if -- obstacleDetected == true:
 --
 ```
 
-`neural.observe(model)` marks the latest inference. `neural.reward(model[, strength])` applies positive feedback; `neural.correct(model[, strength])` applies negative feedback. Strength defaults to 1 and must be greater than 0 and no greater than 10. Feedback requires a recent `neural.getoutN()` call, and an inference can receive feedback only once.
+`neural.observe(model)` stores the latest inference in a bounded history of up to 128 observations. `neural.reward(model[, strength])` applies positive feedback; `neural.correct(model[, strength])` applies negative feedback. Strength defaults to 1 and must be greater than 0 and no greater than 10. Feedback requires a recent `neural.getoutN()` call, and an inference can receive feedback only once.
 
 This is an experimental reward-modulated gradient update, not a complete reinforcement-learning implementation. It adjusts the network toward increasing or decreasing the overall output vector; it does not yet perform per-action credit assignment, experience replay, or model persistence. Test learning in a simulation before connecting outputs to real equipment.
