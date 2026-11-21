@@ -5,7 +5,10 @@
     name: "neural",
     parseLayerHeader(text) {
       const m = text.match(/^neural\.([A-Za-z_][A-Za-z0-9_]*)\.(inputLayer|hidden|outputLayer)\s+--\s*\((\d+)\)\s*:\s*$/i);
-      return m ? { model:m[1], layer:m[2].toLowerCase(), amount:Number(m[3]) } : null;
+      if (!m) return null;
+      const amount = Number(m[3]);
+      if (!Number.isInteger(amount) || amount < 1 || amount > 512) throw new Error("Neural layer counts must be between 1 and 512.");
+      return { model:m[1], layer:m[2].toLowerCase(), amount };
     },
     parseLayerEntry(text, layer) {
       let m;
@@ -18,7 +21,10 @@
         return m ? {kind:"output",index:Number(m[1]),variable:m[2]} : null;
       }
       m=text.match(/^neural\.HL(\d+)\s*\(\s*(\d+)\s*\)$/i);
-      return m ? {kind:"hidden",index:Number(m[1]),neurons:Number(m[2])} : null;
+      if (!m) return null;
+      const neurons = Number(m[2]);
+      if (!Number.isInteger(neurons) || neurons < 1 || neurons > 512) throw new Error("Each hidden layer must contain between 1 and 512 neurons.");
+      return {kind:"hidden",index:Number(m[1]),neurons};
     },
     createRuntime() {
       const models=new Map();
@@ -34,7 +40,7 @@
           values=model.weights[layer].map((w,j)=>sigmoid(w.reduce((sum,v,i)=>sum+v*values[i],model.biases[layer][j])));
         const last=model.weights.length-1;
         const outputs=model.weights[last].map((w,j)=>sigmoid(w.reduce((sum,v,i)=>sum+v*values[i],model.biases[last][j])));
-        model.output.entries.forEach((e,i)=>{vars[e.variable]=outputs[i];});
+        model.output.entries.forEach((e,i)=>{if(!(e.variable in vars))throw new Error("Output variable " + e.variable + " must be defined before requesting network outputs.");vars[e.variable]=outputs[i];});
         return outputs;
       }
       return {
@@ -51,7 +57,10 @@
           if(!m.input)throw new Error("Model '"+name+"' is missing inputLayer.");
           if(!m.hidden||!m.hidden.length)throw new Error("Model '"+name+"' needs at least one hidden layer.");
           if(!m.output)throw new Error("Model '"+name+"' is missing outputLayer.");
-          const sizes=[m.input.entries.length,...m.hidden,m.output.entries.length];m.weights=[];m.biases=[];
+          const sizes=[m.input.entries.length,...m.hidden,m.output.entries.length];
+          const parameterCount=sizes.slice(1).reduce((total,size,index)=>total+size*sizes[index]+size,0);
+          if(parameterCount>1000000)throw new Error("This network exceeds the one-million-parameter safety limit.");
+          m.weights=[];m.biases=[];
           for(let i=1;i<sizes.length;i++){m.weights.push(matrix(sizes[i],sizes[i-1]));m.biases.push(Array.from({length:sizes[i]},()=> (Math.random()*2-1)*0.1));}
           m.assembled=true;return sizes;
         },
