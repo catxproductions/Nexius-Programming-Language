@@ -95,7 +95,7 @@ while -- checkfor("w") == true:
 --
 ```
 
-Without `perm.`, an `on(key)press` or `on(key)release` listener runs once on the next matching event. With `perm.`, it runs for every matching event. The space bar is named `"space"`.
+Without `perm.`, an `on(key)press` or `on(key)release` command pauses execution at that line until the next matching event, runs its block once, and then continues to the next statement. With `perm.`, the listener is registered and execution continues; its block runs for every matching event until the program ends or is stopped. The space bar is named `"space"`.
 
 ### Counted loops
 
