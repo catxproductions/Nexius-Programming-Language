@@ -10,7 +10,7 @@ The repository now includes **Nexius Studio**, a browser-based editor and compil
 - Source editor with line numbers
 - Compile button with line-based diagnostics
 - Run button and interactive input/output console
-- Export source files as `.nx`
+- Export source files as `.nexius`
 - Open the [Nexius Language Documentation](https://catxproductions.github.io/Nexius-Programming-Language/docs.html) for syntax, commands, and language rules
 
 ## Current language draft
@@ -136,7 +136,7 @@ isReady = boolIf -- score >= 100 --
 
 The browser preview currently parses Nexius source into an internal syntax tree and executes that tree in a JavaScript-based Nexius runtime. It is **not yet generating native machine code or WebAssembly**. That is a later compiler-backend milestone.
 
-Current preview supports variables, numeric/string expressions, comparisons, counted `Loop` blocks, lists with indexed access, `input()`, `numinput()`, multi-value `output()`, `clear()`, `wait(time)`, `if/ELIF/ELSE`, `while`, zero-argument functions, keyboard state checks, press/release event blocks, persistent `perm.` listeners, and the comment forms above. Function parameters, return values, pointers, real-time event listeners, and native compilation are not implemented yet.
+Current preview supports variables, numeric/string expressions, comparisons, counted `Loop` blocks, lists with indexed access, `input()`, `numinput()`, multi-value `output()`, `clear()`, `wait(time)`, `if/ELIF/ELSE`, `while`, zero-argument functions, keyboard state checks, press/release event blocks, persistent `perm.` listeners, and the comment forms above. Function parameters, return values, pointers, real-time event listeners, arbitrary third-party modules, and native compilation are not implemented yet. The optional Neural module is documented below.
 
 ## Running locally
 
