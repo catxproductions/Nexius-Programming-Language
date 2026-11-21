@@ -57,14 +57,14 @@
       if (op) { tokens.push({ type: "op", value: op }); i += op.length; continue; }
       if ("+-*/#<>()[], ".includes(text[i])) { const value = text[i++]; if (value !== " ") tokens.push({ type: "op", value }); continue; }
       const id = rest.match(/^[A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z_][A-Za-z0-9_]*)*/);
-      if (id) { tokens.push({ type: "id", value: id[0] }); i += id[0].length; continue; }
+      if (id) { const value = id[0]; tokens.push({ type: /^or$/i.test(value) ? "op" : "id", value: /^or$/i.test(value) ? "or" : value }); i += id[0].length; continue; }
       throw new NexiusError("Unexpected character '" + text[i] + "' in expression.", line);
     }
     tokens.push({ type: "eof", value: "" });
     return tokens;
   }
 
-  const PRECEDENCE = { "==": 1, "/=": 1, "<": 1, ">": 1, "<=": 1, ">=": 1, "+": 2, "-": 2, "*": 3, "/": 3 };
+  const PRECEDENCE = { "or": 0, "==": 1, "/=": 1, "<": 1, ">": 1, "<=": 1, ">=": 1, "+": 2, "-": 2, "*": 3, "/": 3 };
   function parseExpression(text, line) {
     const tokens = tokenizeExpression(text, line); let pos = 0;
     const peek = () => tokens[pos];
@@ -280,7 +280,9 @@
         if (node.op === "#") { if (Number(v) < 0) throw new NexiusError("Cannot take the square root of a negative number."); return Math.sqrt(Number(v)); }
       }
       if (node.type === "binary") {
-        const a = evaluate(node.left), b = evaluate(node.right);
+        const a = evaluate(node.left);
+        if (node.op === "or") return Boolean(a) || Boolean(evaluate(node.right));
+        const b = evaluate(node.right);
         switch (node.op) {
           case "+": return typeof a === "string" || typeof b === "string" ? String(a) + String(b) : Number(a) + Number(b);
           case "-": return Number(a) - Number(b); case "*": return Number(a) * Number(b);
