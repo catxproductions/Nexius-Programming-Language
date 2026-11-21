@@ -124,6 +124,7 @@ greet()
 | `/=` | Not equal |
 | `<`, `>` | Less than, greater than |
 | `<=`, `>=` | Less/greater than or equal |
+| `or` | Logical OR; true if either side is true |
 | `+`, `-`, `*`, `/` | Arithmetic |
 | `#value` | Square root |
 
