@@ -147,7 +147,13 @@
           importedModules.add(moduleName);
           body.push({ type: "import", name: moduleName, line: r.line }); continue;
         }
-        if (neuralModule && (m = neuralModule.parseLayerHeader(s))) {
+        let neuralHeader = null;
+        if (neuralModule) {
+          try { neuralHeader = neuralModule.parseLayerHeader(s); }
+          catch (error) { throw new NexiusError(error.message, r.line); }
+        }
+        if (neuralHeader) {
+          m = neuralHeader;
           if (!importedModules.has("neural")) throw new NexiusError("Add imp.neural before declaring Neural layers.", r.line);
           const layerName = m.layer.toLowerCase(), entries = [];
           while (p < records.length && records[p].text !== "--") {
