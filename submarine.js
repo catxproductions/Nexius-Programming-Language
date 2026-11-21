@@ -84,7 +84,7 @@
     $("turnReadout").textContent = Number(vars.turnPower || 0).toFixed(2);
   }
 
-  function simulationFrame(vars, seconds) {
+  async function simulationFrame(vars, seconds) {
     if (paused) {
       while (paused && !stopRequested) awaitPause();
     }
@@ -96,7 +96,7 @@
       addLog("Goal reached. Neural reward recorded.", "good");
     }
     const forward = clamp(Number(vars.forwardPower)||0,0,1);
-    const reverse = clamp(Number(vars.reversePower)||0,1);
+    const reverse = clamp(Number(vars.reversePower)||0,0,1);
     const rise = clamp(Number(vars.risePower)||0,0,1);
     const dive = clamp(Number(vars.divePower)||0,0,1);
     const turn = clamp(Number(vars.turnPower)||0,0,1);
