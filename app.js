@@ -252,7 +252,7 @@ if -- name == "Nexius" :
   $("downloadBtn").addEventListener("click", () => {
     const blob = new Blob([source.value], {type:"text/plain;charset=utf-8"});
     const url = URL.createObjectURL(blob); const a = document.createElement("a");
-    a.href = url; a.download = "main.nx"; a.click(); URL.revokeObjectURL(url);
+    a.href = url; a.download = "nexcode.nexius"; a.click(); URL.revokeObjectURL(url);
   });
   source.addEventListener("input", () => { compiled = null; updateLines(); updateCursor(); setStatus("Unsaved changes", true); buildRecommendations(); });
   source.addEventListener("click", () => { updateCursor(); buildRecommendations(); }); source.addEventListener("keyup", () => { updateCursor(); buildRecommendations(); });
