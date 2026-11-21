@@ -143,3 +143,40 @@ Current preview supports variables, numeric/string expressions, comparisons, cou
 Serve this folder with any static web server, or enable GitHub Pages for the repository using the `main` branch and root folder. Then open `index.html` in a browser.
 
 Nexius is under active development; syntax and runtime behavior may change as the language specification matures.
+
+## Optional modules: Neural
+
+Import Neural with `imp.neural`. This module adds network layer syntax and functions. The example declares a 3-5-3-3 feed-forward network:
+
+```nexius
+imp.neural
+
+speed = 0.75
+trackwalldistance = 0.30
+temp = 0.50
+gas = 0
+brakes = 0
+turning = 0
+
+neural.nexiusRacingBot.inputLayer -- (3):
+  neural.in1 = speed
+  neural.in2 = trackwalldistance
+  neural.in3 = temp
+--
+
+neural.nexiusRacingBot.hidden -- (2):
+  neural.HL1(5)
+  neural.HL2(3)
+--
+
+neural.nexiusRacingBot.outputLayer -- (3):
+  neural.out1 = gas
+  neural.out2 = brakes
+  neural.out3 = turning
+--
+
+neural.assemble(nexiusRacingBot)
+gas = neural.getout1(nexiusRacingBot)
+```
+
+Counts after `inputLayer` and `outputLayer` specify neuron counts. The count after `hidden` specifies the number of hidden layers; each `HLN(amount)` defines one hidden layer's size. Identifiers are sequential from 1 and local to their declaration. Inputs are live variable links. Requesting an output performs a forward pass and updates linked output variables. Initial weights are random and activation is sigmoid; training and weight persistence are not implemented yet.
