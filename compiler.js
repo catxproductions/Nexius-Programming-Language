@@ -398,6 +398,13 @@
               const sizes = neuralRuntime.assemble(node.args[0].name);
               output("Assembled neural model " + node.args[0].name + " (" + sizes.join("-") + ").");
             } catch (error) { throw new NexiusError(error.message, node.line); }
+          } else if (node.name === "neural.run") {
+            if (!loadedModules.has("neural") || !neuralRuntime) throw new NexiusError("Import neural with imp.neural before using Neural functions.", node.line);
+            if ((node.args || []).length !== 1 || !node.args[0] || node.args[0].type !== "variable") throw new NexiusError("neural.run() requires one model name.", node.line);
+            try {
+              const values = neuralRuntime.run(node.args[0].name, vars);
+              output("Neural model " + node.args[0].name + " ran (" + values.length + " outputs updated).");
+            } catch (error) { throw new NexiusError(error.message, node.line); }
           } else if (/^neural\.(correct|reward|observe)$/i.test(node.name)) {
             if (!loadedModules.has("neural") || !neuralRuntime) throw new NexiusError("Import neural with imp.neural before using Neural functions.", node.line);
             const method = node.name.split(".")[1].toLowerCase();
