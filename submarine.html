@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0b0d12">
+  <title>SubmarineAI Runner · Nexius Studio</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="submarine.css">
+</head>
+<body class="submarine-page">
+  <header class="topbar">
+    <a class="brand" href="./"><span class="brand-mark">N</span><span>NEXIUS <small>STUDIO</small></span></a>
+    <div class="file-label"><span class="dot"></span> SubmarineAI.nexius <span class="saved">LIVE SIMULATION</span></div>
+    <div class="top-actions"><a class="quiet" href="./">Back to Editor</a><a class="quiet docs-link" href="docs.html">Language Docs</a></div>
+  </header>
+
+  <main class="sim-layout">
+    <section class="sim-main panel">
+      <div class="sim-heading">
+        <div><span class="eyebrow">NEXIUS NEURAL ENVIRONMENT</span><h1>SubmarineAI Runner</h1><p>The committed Nexius program controls the submarine in this interactive underwater test world.</p></div>
+        <div class="sim-state"><span id="simStatusDot"></span><span id="simStatus">Ready</span></div>
+      </div>
+      <div class="canvas-wrap">
+        <canvas id="oceanCanvas" width="1000" height="560" aria-label="Interactive underwater simulation"></canvas>
+        <div class="canvas-hint">Click to move the target · Place obstacle mode adds a new obstacle</div>
+      </div>
+      <div class="sim-toolbar">
+        <div class="sim-actions">
+          <button id="startBtn" class="sim-primary">▶ Run SubmarineAI</button>
+          <button id="pauseBtn" class="sim-secondary" disabled>Pause</button>
+          <button id="stopBtn" class="sim-danger" disabled>Stop</button>
+          <button id="resetBtn" class="sim-secondary">Reset World</button>
+        </div>
+        <div class="placement-actions">
+          <button id="goalModeBtn" class="sim-tool active">Move Goal</button>
+          <button id="obstacleModeBtn" class="sim-tool">Place Obstacle</button>
+        </div>
+      </div>
+      <div class="metrics-grid">
+        <div class="metric"><span>GOALS REACHED</span><strong id="scoreMetric">0</strong></div>
+        <div class="metric"><span>HULL INTEGRITY</span><strong id="hullMetric">100%</strong></div>
+        <div class="metric"><span>WATER LEVEL</span><strong id="waterMetric">0%</strong></div>
+        <div class="metric"><span>ENGINE TEMP</span><strong id="tempMetric">25°</strong></div>
+        <div class="metric"><span>AI STATE</span><strong id="modeMetric">Standby</strong></div>
+      </div>
+    </section>
+
+    <aside class="sim-side">
+      <section class="panel sim-info">
+        <div class="side-heading"><span class="eyebrow">CONTROLLER</span><h2>Neural network</h2></div>
+        <div class="network-shape">10 <i>→</i> 20 <i>→</i> 16 <i>→</i> 10 <i>→</i> 7</div>
+        <p>10 live environment inputs feed three hidden layers. Seven output values drive the simulated submarine controls.</p>
+        <div class="signal-list">
+          <div><span>Forward</span><b id="forwardReadout">0.00</b></div>
+          <div><span>Reverse</span><b id="reverseReadout">0.00</b></div>
+          <div><span>Rise</span><b id="riseReadout">0.00</b></div>
+          <div><span>Dive</span><b id="diveReadout">0.00</b></div>
+          <div><span>Turn</span><b id="turnReadout">0.00</b></div>
+        </div>
+      </section>
+      <section class="panel sim-info">
+        <div class="side-heading"><span class="eyebrow">PROGRAM OUTPUT</span><h2>Runtime console</h2><button id="clearLogBtn" class="icon-button">Clear</button></div>
+        <div id="simLog" class="sim-log" role="log" aria-live="polite"><div class="placeholder">Run SubmarineAI to see compiler and program output.</div></div>
+      </section>
+      <section class="panel sim-info">
+        <div class="side-heading"><span class="eyebrow">HOW TO INTERACT</span><h2>Test environment</h2></div>
+        <ul class="sim-help">
+          <li>Run the actual <code>SubmarineAI.nexius</code> file from the repository.</li>
+          <li>Move the goal to create a new navigation challenge.</li>
+          <li>Place obstacles in the submarine's path and observe its response.</li>
+          <li>Reset World restores the environment and clears the score.</li>
+        </ul>
+      </section>
+    </aside>
+  </main>
+  <footer class="footer"><span>NEXIUS STUDIO <span class="muted">· SubmarineAI interactive runner</span></span><a href="./">Return to editor</a></footer>
+
+  <script src="modules/neural.js"></script>
+  <script src="compiler.js"></script>
+  <script src="submarine.js"></script>
+</body>
+</html>
