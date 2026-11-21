@@ -42,7 +42,11 @@ output("Console cleared.")</code></pre></section>
   output("Almost there.")
 -- ELSE --:
   output("Keep trying.")
---</code></pre><p>Boolean expressions can be assigned using <code>boolIf</code>:</p><pre><code>is_ready = boolIf -- score >= 100 --</code></pre></section>
+--</code></pre><p>Boolean expressions can be combined with <code>or</code>. It is supported in <code>if</code>, <code>while</code>, and <code>boolIf</code> conditions. The right side is evaluated only when the left side is false:</p><pre><code>if -- hullCritical == true or waterLevel > criticalWaterLevel:
+  output("Emergency mode enabled.")
+--
+
+is_emergency = boolIf -- hullCritical == true or waterLevel > criticalWaterLevel --</code></pre><p>Boolean expressions can also be assigned using <code>boolIf</code>:</p><pre><code>is_ready = boolIf -- score >= 100 --</code></pre></section>
 <section class="panel docs-card" id="loops"><h2>Loops</h2><p>A <code>while</code> block repeats while its condition is true. Close the block with <code>--</code>.</p><pre><code>counter = 0
 while -- counter < 5:
   output(counter)
