@@ -1,0 +1,205 @@
+
+,,, NEXIUS AUTONOMOUS SUBMARINE AI
+,,, Neural architecture: 10-20-16-10-7
+,,, Simulation controller
+
+imp.neural
+
+,,, --------------------------------
+,,, 1. SENSOR VARIABLES
+,,, --------------------------------
+
+distFromSeaFloor = 100
+distFromWaterSurface = 100
+distFromGoal = 200
+distFromObstacle = 100
+
+motionUp = 0
+motionDown = 0
+motionForward = 0
+motionBack = 0
+
+hullIntegrity = 100
+waterLevel = 0
+engineTemperature = 25
+
+,,, --------------------------------
+,,, 2. CONFIGURATION
+,,, --------------------------------
+
+safeFloorDistance = 15
+safeSurfaceDistance = 10
+obstacleThreshold = 20
+
+criticalHullIntegrity = 30
+criticalWaterLevel = 60
+criticalTemperature = 90
+
+aiEnabled = true
+emergencyMode = false
+obstacleDetected = false
+goalReached = false
+hullCritical = false
+
+,,, --------------------------------
+,,, 3. OUTPUT VARIABLES
+,,, --------------------------------
+
+forwardPower = 0
+reversePower = 0
+risePower = 0
+divePower = 0
+turnPower = 0
+bilgePower = 0
+floodControl = 0
+
+,,, --------------------------------
+,,, 4. BUILD NEURAL NETWORK
+,,, --------------------------------
+
+define -- buildAI():
+    neural.SubmarineAI.inputLayer -- (10):
+        neural.in1 = distFromSeaFloor
+        neural.in2 = distFromWaterSurface
+        neural.in3 = distFromGoal
+        neural.in4 = distFromObstacle
+        neural.in5 = motionUp
+        neural.in6 = motionDown
+        neural.in7 = motionForward
+        neural.in8 = motionBack
+        neural.in9 = hullIntegrity
+        neural.in10 = waterLevel
+    --
+
+    neural.SubmarineAI.hidden -- (3):
+        neural.HL1(20)
+        neural.HL2(16)
+        neural.HL3(10)
+    --
+
+    neural.SubmarineAI.outputLayer -- (7):
+        neural.out1 = forwardPower
+        neural.out2 = reversePower
+        neural.out3 = risePower
+        neural.out4 = divePower
+        neural.out5 = turnPower
+        neural.out6 = bilgePower
+        neural.out7 = floodControl
+    --
+
+    neural.assemble(SubmarineAI)
+--
+
+,,, --------------------------------
+,,, 5. INITIALIZE AI
+,,, --------------------------------
+
+buildAI()
+
+output("SubmarineAI initialized.")
+output("Neural network assembled.")
+
+,,, --------------------------------
+,,, 6. MAIN SIMULATION LOOP
+,,, --------------------------------
+
+while -- aiEnabled == true:
+
+    ,,, Run one complete neural inference.
+    neural.run(SubmarineAI)
+
+    ,,, Reset temporary state.
+    emergencyMode = false
+    obstacleDetected = false
+    hullCritical = false
+    goalReached = false
+
+    ,,, --------------------------------
+    ,,, 7. ENVIRONMENT DETECTION
+    ,,, --------------------------------
+
+    if -- distFromObstacle < obstacleThreshold:
+        obstacleDetected = true
+    --
+
+    if -- hullIntegrity < criticalHullIntegrity:
+        hullCritical = true
+    --
+
+    if -- distFromGoal < 5:
+        goalReached = true
+    --
+
+    ,,, --------------------------------
+    ,,, 8. EMERGENCY DETECTION
+    ,,, --------------------------------
+
+    emergencyMode = boolIf -- hullCritical == true or waterLevel > criticalWaterLevel or engineTemperature > criticalTemperature --
+
+    ,,, --------------------------------
+    ,,, 9. EMERGENCY RESPONSE
+    ,,, --------------------------------
+
+    if -- emergencyMode == true:
+
+        forwardPower = 0
+        reversePower = 0
+        risePower = 0
+        divePower = 0
+        turnPower = 0
+
+        if -- waterLevel > criticalWaterLevel:
+            bilgePower = 1
+        --
+
+        floodControl = 0
+
+        output("WARNING: Emergency state detected.")
+
+    -- ELIF -- obstacleDetected == true:
+
+        forwardPower = 0
+        reversePower = 1
+        turnPower = 1
+        divePower = 0
+        risePower = 0
+
+        output("Obstacle detected.")
+
+    -- ELSE --:
+
+        output("AI operating normally.")
+
+    --
+
+    ,,, --------------------------------
+    ,,, 10. NEURAL FEEDBACK
+    ,,, --------------------------------
+
+    if -- emergencyMode == true:
+        neural.correct(SubmarineAI)
+
+    -- ELIF -- obstacleDetected == true:
+        neural.correct(SubmarineAI)
+
+    -- ELIF -- goalReached == true:
+        neural.reward(SubmarineAI)
+
+    -- ELSE --:
+        neural.observe(SubmarineAI)
+    --
+
+    ,,, --------------------------------
+    ,,, 11. STATUS
+    ,,, --------------------------------
+
+    output("Forward:", forwardPower)
+    output("Reverse:", reversePower)
+    output("Rise:", risePower)
+    output("Dive:", divePower)
+    output("Turning:", turnPower)
+    output("Bilge:", bilgePower)
+
+    wait(0.05)
+
+--
