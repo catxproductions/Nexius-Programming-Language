@@ -398,6 +398,20 @@
               const sizes = neuralRuntime.assemble(node.args[0].name);
               output("Assembled neural model " + node.args[0].name + " (" + sizes.join("-") + ").");
             } catch (error) { throw new NexiusError(error.message, node.line); }
+          } else if (/^neural\.(correct|reward|observe)$/i.test(node.name)) {
+            if (!loadedModules.has("neural") || !neuralRuntime) throw new NexiusError("Import neural with imp.neural before using Neural functions.", node.line);
+            const method = node.name.split(".")[1].toLowerCase();
+            const args = node.args || [];
+            const validCount = method === "observe" ? args.length === 1 : (args.length === 1 || args.length === 2);
+            if (!validCount || !args[0] || args[0].type !== "variable") {
+              throw new NexiusError("neural." + method + "() requires a model name" + (method === "observe" ? "." : " and an optional feedback strength."), node.line);
+            }
+            const strength = args.length === 2 ? Number(evaluate(args[1])) : 1;
+            try {
+              neuralRuntime[method](args[0].name, strength);
+              if (method === "reward") output("Neural reward applied to " + args[0].name + ".");
+              else if (method === "correct") output("Neural correction applied to " + args[0].name + ".");
+            } catch (error) { throw new NexiusError(error.message, node.line); }
           } else if (node.name === "clear") {
             if ((node.args || []).length !== 0) throw new NexiusError("clear() does not accept arguments.", node.line);
             if (hooks.clear) hooks.clear();
