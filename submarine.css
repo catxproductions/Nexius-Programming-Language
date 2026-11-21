@@ -1,0 +1,40 @@
+.submarine-page{min-height:100vh}
+.sim-layout{max-width:1600px;margin:0 auto;padding:22px;display:grid;grid-template-columns:minmax(0,1.7fr) minmax(280px,.72fr);gap:17px}
+.sim-main{min-width:0}
+.sim-heading{padding:20px 22px;display:flex;align-items:flex-start;justify-content:space-between;gap:20px;border-bottom:1px solid var(--line)}
+.sim-heading h1{font-size:22px;letter-spacing:-.035em;margin:5px 0}
+.sim-heading p{color:#91a1b5;font-size:12px;margin:0}
+.sim-state{display:flex;align-items:center;gap:8px;color:#aabbd0;font-size:11px;white-space:nowrap;padding-top:8px}
+.sim-state span:first-child{width:8px;height:8px;border-radius:50%;background:#8290a4;box-shadow:0 0 10px #8290a455}
+.sim-state.running span:first-child{background:var(--green);box-shadow:0 0 12px #54d6a088}
+.canvas-wrap{position:relative;padding:12px;background:#07121b}
+#oceanCanvas{display:block;width:100%;height:auto;aspect-ratio:25/14;border:1px solid #1e4558;border-radius:7px;background:#082b40;cursor:crosshair}
+.canvas-hint{position:absolute;left:24px;bottom:21px;color:#9ec2d0;background:#071722bd;border:1px solid #285064;border-radius:5px;padding:5px 8px;font-size:9px;pointer-events:none}
+.sim-toolbar{padding:13px 16px;display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;border-bottom:1px solid var(--line)}
+.sim-actions,.placement-actions{display:flex;gap:7px;flex-wrap:wrap}
+.sim-toolbar button{border-radius:6px;padding:8px 11px;font-size:11px;font-weight:700;cursor:pointer}
+.sim-toolbar button:disabled{opacity:.35;cursor:not-allowed}
+.sim-primary{background:linear-gradient(135deg,#69d7e8,#4e9bbd);border:0;color:#07151b}
+.sim-secondary{background:#1a2432;border:1px solid #34445a;color:#cbd8e9}
+.sim-danger{background:#2a1b22;border:1px solid #57313e;color:#f3a0aa}
+.sim-tool{background:#121b27;border:1px solid #2a394b;color:#9cacc0}
+.sim-tool.active{border-color:#4e9caf;color:#a5e8ef;background:#172d38}
+.metrics-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:1px;background:var(--line)}
+.metric{background:#111720;padding:13px 14px;min-width:0}
+.metric span{display:block;color:#7e8da2;font-size:8px;letter-spacing:.13em;font-weight:750}
+.metric strong{display:block;margin-top:4px;font-size:17px;font-weight:650;color:#d9e9f1;overflow:hidden;text-overflow:ellipsis}
+.sim-side{display:flex;flex-direction:column;gap:15px;min-width:0}
+.sim-info{padding:16px}
+.side-heading{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.side-heading h2{font-size:15px;margin:3px 0 0}
+.network-shape{margin:17px 0 9px;padding:15px 10px;text-align:center;border:1px solid #294454;border-radius:7px;background:#0b1b26;color:#a9e7ed;font:700 19px ui-monospace,monospace;letter-spacing:.04em}
+.network-shape i{font-style:normal;color:#668b9e;padding:0 3px}
+.sim-info p,.sim-help{font-size:11px;color:#9baabe;line-height:1.7}
+.signal-list{margin-top:14px;border-top:1px solid var(--line)}
+.signal-list div{display:flex;justify-content:space-between;padding:7px 1px;border-bottom:1px solid #202a36;color:#aab8ca;font-size:11px}
+.signal-list b{color:#9ce2ea;font:12px ui-monospace,monospace}
+.sim-log{margin-top:13px;height:230px;overflow:auto;background:#0a1017;border:1px solid #202b38;border-radius:6px;padding:10px;color:#bcd0dd;font:10px/1.75 ui-monospace,monospace;white-space:pre-wrap;overflow-wrap:anywhere}
+.sim-log .log-line{padding:1px 0}.sim-log .log-line.error{color:#ff929a}.sim-log .log-line.good{color:#9ce4c4}.sim-help{padding-left:17px;margin:13px 0 0}.sim-help li{margin:6px 0}.sim-help code{color:#9de4ed;background:#0b1119;padding:2px 4px;border-radius:3px}
+.footer a{color:#8bdce8;text-decoration:none}
+@media(max-width:1000px){.sim-layout{grid-template-columns:1fr}.sim-side{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}.sim-side .sim-info:last-child{grid-column:1/-1}}
+@media(max-width:650px){.sim-layout{padding:10px;gap:10px}.sim-heading{padding:15px;flex-direction:column}.sim-heading h1{font-size:19px}.sim-toolbar{padding:11px}.sim-actions,.placement-actions{width:100%}.sim-toolbar button{flex:1}.sim-side{display:flex}.metrics-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.metric:last-child{grid-column:1/-1}.canvas-hint{font-size:8px;left:17px;bottom:17px}.sim-log{height:190px}}
