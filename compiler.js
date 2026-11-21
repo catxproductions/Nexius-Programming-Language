@@ -218,7 +218,7 @@
     hooks = hooks || {}; options = options || {};
     const vars = Object.create(null), functions = Object.create(null);
     let stopped = false, steps = 0;
-    const keyStates = new Map(), keyHandlers = [], trackedKeys = new Set();
+    const keyStates = new Map(), keyHandlers = [], trackedKeys = new Set(), eventWaiters = [];
     let eventQueue = Promise.resolve(), eventError = null;
     const maxSteps = options.maxSteps || 100000;
     const shouldStop = () => stopped || Boolean(hooks.isStopped && hooks.isStopped());
@@ -317,7 +317,35 @@
         } else if (node.type === "define") functions[node.name] = node.body;
         else if (node.type === "keyEvent") {
           const key = normalizeKey(evaluate(node.keyExpression));
-          keyHandlers.push({ key, event: node.event, persistent: node.persistent, body: node.body, line: node.line, active: true });
+          if (node.persistent) {
+            keyHandlers.push({ key, event: node.event, persistent: true, body: node.body, line: node.line, active: true });
+          } else {
+            // A normal on(...) block pauses this program position until its event occurs.
+            await new Promise((resolve, reject) => {
+              let settled = false;
+              const waiter = { key, event: node.event, resolve: () => {
+                if (settled) return;
+                settled = true;
+                const index = eventWaiters.indexOf(waiter);
+                if (index >= 0) eventWaiters.splice(index, 1);
+                resolve();
+              }};
+              eventWaiters.push(waiter);
+              const checkStopped = () => {
+                if (settled) return;
+                if (shouldStop()) {
+                  settled = true;
+                  const index = eventWaiters.indexOf(waiter);
+                  if (index >= 0) eventWaiters.splice(index, 1);
+                  resolve();
+                  return;
+                }
+                waiter.stopTimer = setTimeout(checkStopped, 25);
+              };
+              waiter.stopTimer = setTimeout(checkStopped, 25);
+            });
+            if (!shouldStop()) await execute(node.body);
+          }
         }
         else if (node.type === "callStatement") {
           if (node.name === "clear") {
@@ -349,9 +377,10 @@
       removeKeyListener = hooks.onKeyEvent((eventName, rawKey) => {
         const key = normalizeKey(rawKey);
         keyStates.set(key, eventName === "press");
+        const waiting = eventWaiters.filter(waiter => waiter.key === key && waiter.event === eventName);
+        for (const waiter of waiting) waiter.resolve();
         const matches = keyHandlers.filter(handler => handler.active && handler.key === key && handler.event === eventName);
         for (const handler of matches) {
-          if (!handler.persistent) handler.active = false;
           eventQueue = eventQueue.then(async () => {
             if (!shouldStop()) await execute(handler.body);
           }).catch(error => { eventError = error; stopped = true; });
