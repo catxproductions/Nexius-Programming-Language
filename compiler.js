@@ -56,7 +56,7 @@
       const op = ["==", "/=", "<=", ">=", "--"].find(x => rest.startsWith(x));
       if (op) { tokens.push({ type: "op", value: op }); i += op.length; continue; }
       if ("+-*/#<>()[], ".includes(text[i])) { const value = text[i++]; if (value !== " ") tokens.push({ type: "op", value }); continue; }
-      const id = rest.match(/^[A-Za-z_][A-Za-z0-9_]*(?:\\.[A-Za-z_][A-Za-z0-9_]*)*/);
+      const id = rest.match(/^[A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z_][A-Za-z0-9_]*)*/);
       if (id) { tokens.push({ type: "id", value: id[0] }); i += id[0].length; continue; }
       throw new NexiusError("Unexpected character '" + text[i] + "' in expression.", line);
     }
