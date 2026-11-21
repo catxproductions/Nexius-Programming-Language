@@ -132,6 +132,8 @@
   function parse(source) {
     const lines = stripComments(source);
     const records = lines.map((raw, i) => ({ raw, text: raw.trim(), line: i + 1 })).filter(x => x.text);
+    const importedModules = new Set();
+    const neuralModule = window.NexiusModules && window.NexiusModules.neural;
     let p = 0;
     const stop = (s) => s === "--" || s.startsWith("-- ELIF --") || s.startsWith("-- ELSE --");
     function block() {
@@ -139,6 +141,27 @@
       while (p < records.length && !stop(records[p].text)) {
         const r = records[p++], s = r.text;
         let m;
+        if ((m = s.match(/^imp\.([A-Za-z_][A-Za-z0-9_]*)$/i))) {
+          const moduleName = m[1].toLowerCase();
+          if (moduleName !== "neural" || !neuralModule) throw new NexiusError("Optional module '" + moduleName + "' is not available.", r.line);
+          importedModules.add(moduleName);
+          body.push({ type: "import", name: moduleName, line: r.line }); continue;
+        }
+        if (neuralModule && (m = neuralModule.parseLayerHeader(s))) {
+          if (!importedModules.has("neural")) throw new NexiusError("Add imp.neural before declaring Neural layers.", r.line);
+          const layerName = m.layer.toLowerCase(), entries = [];
+          while (p < records.length && records[p].text !== "--") {
+            const entryRecord = records[p++];
+            const entry = neuralModule.parseLayerEntry(entryRecord.text, layerName);
+            if (!entry) throw new NexiusError("Invalid " + layerName + " entry. Check its neuron identifier and syntax.", entryRecord.line);
+            if (entry.index !== entries.length + 1) throw new NexiusError("Neuron identifiers must be sequential, starting at 1 (expected " + (entries.length + 1) + ").", entryRecord.line);
+            entries.push(entry);
+          }
+          if (p >= records.length || records[p].text !== "--") throw new NexiusError("Expected -- to close Neural layer.", r.line);
+          p++;
+          if (entries.length !== m.amount) throw new NexiusError("This " + layerName + " declares " + m.amount + " entries but contains " + entries.length + ".", r.line);
+          body.push({ type: "neuralLayer", model: m.model, layer: layerName, amount: m.amount, entries, line: r.line }); continue;
+        }
         if ((m = s.match(/^if\s+--\s*(.*?)\s*:\s*$/i))) {
           const branches = [];
           branches.push({ condition: parseExpression(m[1], r.line), body: block() });
@@ -186,7 +209,7 @@
           const call = m[1].trim() ? parseExpression("__nexius_output__(" + m[1] + ")", r.line) : null;
           body.push({ type: "output", expressions: call ? call.args : [], line: r.line }); continue;
         }
-        if ((m = s.match(/^(perm\.)?([A-Za-z_][A-Za-z0-9_]*)\s*\((.*)\)\s*$/))) {
+        if ((m = s.match(/^(perm\.)?([A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z_][A-Za-z0-9_]*)*)\s*\((.*)\)\s*$/))) {
           const args = m[3].trim() ? parseExpression("__nexius_call__(" + m[3] + ")", r.line).args : [];
           body.push({ type: "callStatement", name: m[2], args, persistent: Boolean(m[1]), line: r.line }); continue;
         }
@@ -217,6 +240,8 @@
   async function run(compiled, hooks, options) {
     hooks = hooks || {}; options = options || {};
     const vars = Object.create(null), functions = Object.create(null);
+    const loadedModules = new Set();
+    const neuralRuntime = window.NexiusModules && window.NexiusModules.neural ? window.NexiusModules.neural.createRuntime() : null;
     let stopped = false, steps = 0;
     const keyStates = new Map(), keyHandlers = [], trackedKeys = new Set(), eventWaiters = [];
     let eventQueue = Promise.resolve(), eventError = null;
@@ -260,6 +285,13 @@
         }
       }
       if (node.type === "call") {
+        if (/^neural\.getout[1-9][0-9]*$/i.test(node.name)) {
+          if (!loadedModules.has("neural") || !neuralRuntime) throw new NexiusError("Import neural with imp.neural before using Neural functions.");
+          if (node.args.length !== 1 || node.args[0].type !== "variable") throw new NexiusError(node.name + "() requires one model name.");
+          const index = Number(node.name.match(/getout([0-9]+)/i)[1]);
+          try { return neuralRuntime.getOutput(node.args[0].name, index, vars); }
+          catch (error) { throw new NexiusError(error.message); }
+        }
         if (node.name === "input") return readInput(node.args.length ? evaluate(node.args[0]) : "");
         if (node.name === "checkfor") {
           if (node.args.length !== 1) throw new NexiusError("checkfor() requires exactly one key.");
@@ -273,7 +305,12 @@
       for (const node of nodes) {
         if (shouldStop()) { stopped = true; return; }
         if (++steps > maxSteps) throw new NexiusError("Execution stopped: maximum instruction count reached (possible infinite loop).", node.line);
-        if (node.type === "assign") {
+        if (node.type === "import") {
+          loadedModules.add(node.name);
+        } else if (node.type === "neuralLayer") {
+          if (!loadedModules.has("neural") || !neuralRuntime) throw new NexiusError("Import neural with imp.neural before declaring Neural layers.", node.line);
+          try { neuralRuntime.declareLayer(node); } catch (error) { throw new NexiusError(error.message, node.line); }
+        } else if (node.type === "assign") {
           if (node.expression.type === "call" && (node.expression.name === "input" || node.expression.name === "numinput")) {
             const isNumber = node.expression.name === "numinput";
             const raw = await readInput(node.expression.args.length ? evaluate(node.expression.args[0]) : "", isNumber ? "number" : "text");
@@ -348,7 +385,14 @@
           }
         }
         else if (node.type === "callStatement") {
-          if (node.name === "clear") {
+          if (node.name === "neural.assemble") {
+            if (!loadedModules.has("neural") || !neuralRuntime) throw new NexiusError("Import neural with imp.neural before using Neural functions.", node.line);
+            if ((node.args || []).length !== 1 || node.args[0].type !== "variable") throw new NexiusError("neural.assemble() requires one model name.", node.line);
+            try {
+              const sizes = neuralRuntime.assemble(node.args[0].name);
+              output("Assembled neural model " + node.args[0].name + " (" + sizes.join("-") + ").");
+            } catch (error) { throw new NexiusError(error.message, node.line); }
+          } else if (node.name === "clear") {
             if ((node.args || []).length !== 0) throw new NexiusError("clear() does not accept arguments.", node.line);
             if (hooks.clear) hooks.clear();
           } else if (node.name === "checkfor") {
