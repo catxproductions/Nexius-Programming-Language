@@ -30,3 +30,11 @@
   align-self: stretch;
   overflow: auto;
 }
+
+
+/* Bottom-page launch link for the SubmarineAI interactive runner */
+.bottom-launch{max-width:1552px;margin:0 auto 24px;padding:22px 25px;border:1px solid #294354;border-radius:11px;background:linear-gradient(110deg,#12232d,#111923 70%);display:flex;align-items:center;justify-content:space-between;gap:20px}
+.bottom-launch h2{margin:4px 0;font-size:18px}.bottom-launch p{margin:0;color:#91a3b8;font-size:12px}
+.launch-button{display:inline-flex;align-items:center;gap:13px;white-space:nowrap;padding:11px 16px;border-radius:7px;background:linear-gradient(135deg,#69d7e8,#4e9bbd);color:#07151b;text-decoration:none;font-size:12px;font-weight:750}
+.launch-button:hover{filter:brightness(1.1)}
+@media(max-width:650px){.bottom-launch{margin:0 10px 18px;padding:17px;align-items:flex-start;flex-direction:column}.launch-button{white-space:normal}}
