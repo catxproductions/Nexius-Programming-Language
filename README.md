@@ -180,3 +180,25 @@ gas = neural.getout1(nexiusRacingBot)
 ```
 
 Counts after `inputLayer` and `outputLayer` specify neuron counts. The count after `hidden` specifies the number of hidden layers; each `HLN(amount)` defines one hidden layer's size. Identifiers are sequential from 1 and local to their declaration. Inputs are live variable links. Requesting an output performs a forward pass and updates linked output variables. Initial weights are random and activation is sigmoid; training and weight persistence are not implemented yet.
+
+
+### Experimental Neural feedback
+
+After requesting a model output, Nexius can apply feedback to that most recent inference:
+
+```nexius
+gas = neural.getout1(SubmarineAI)
+turning = neural.getout2(SubmarineAI)
+
+if -- obstacleDetected == true:
+  neural.correct(SubmarineAI)
+-- ELIF -- goalReached == true:
+  neural.reward(SubmarineAI, 2)
+-- ELSE --:
+  neural.observe(SubmarineAI)
+--
+```
+
+`neural.observe(model)` marks the latest inference. `neural.reward(model[, strength])` applies positive feedback; `neural.correct(model[, strength])` applies negative feedback. Strength defaults to 1 and must be greater than 0 and no greater than 10. Feedback requires a recent `neural.getoutN()` call, and an inference can receive feedback only once.
+
+This is an experimental reward-modulated gradient update, not a complete reinforcement-learning implementation. It adjusts the network toward increasing or decreasing the overall output vector; it does not yet perform per-action credit assignment, experience replay, or model persistence. Test learning in a simulation before connecting outputs to real equipment.
