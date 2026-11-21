@@ -433,6 +433,7 @@
             if ((node.args || []).length !== 1) throw new NexiusError("wait() requires exactly one time value in seconds.", node.line);
             const seconds = Number(evaluate(node.args[0]));
             if (!Number.isFinite(seconds) || seconds < 0) throw new NexiusError("wait() requires a non-negative number of seconds.", node.line);
+            if (typeof hooks.onFrame === "function") await hooks.onFrame(vars, seconds);
             const endTime = Date.now() + seconds * 1000;
             while (!shouldStop() && Date.now() < endTime) {
               await new Promise(resolve => setTimeout(resolve, Math.min(50, Math.max(0, endTime - Date.now()))));
