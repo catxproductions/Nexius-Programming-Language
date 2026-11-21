@@ -9,7 +9,7 @@
 <main class="docs-page">
 <section class="docs-hero"><span class="eyebrow">CURRENT LANGUAGE REFERENCE</span><h1>Nexius Documentation</h1><p>Syntax, built-in commands, operators, and rules for writing Nexius programs in Nexius Studio.</p><a class="docs-back" href="./">← Return to Studio</a></section>
 <div class="docs-layout">
-<nav class="panel docs-nav" aria-label="Documentation sections"><a href="#start">Quick start</a><a href="#comments">Comments</a><a href="#values">Variables and values</a><a href="#io">Input and output</a><a href="#lists">Lists</a><a href="#console">Console commands</a><a href="#conditions">Conditions</a><a href="#loops">Loops</a><a href="#keyboard">Keyboard events</a><a href="#functions">Functions</a><a href="#operators">Operators</a><a href="#rules">Language rules</a><a href="#limits">Limitations</a></nav>
+<nav class="panel docs-nav" aria-label="Documentation sections"><a href="#start">Quick start</a><a href="#comments">Comments</a><a href="#values">Variables and values</a><a href="#io">Input and output</a><a href="#lists">Lists</a><a href="#console">Console commands</a><a href="#conditions">Conditions</a><a href="#loops">Loops</a><a href="#keyboard">Keyboard events</a><a href="#modules">Modules and Neural</a><a href="#functions">Functions</a><a href="#operators">Operators</a><a href="#rules">Language rules</a><a href="#limits">Limitations</a></nav>
 <div class="docs-content">
 <section class="panel docs-card" id="start"><h2>Quick start</h2><p>Write code in the Studio editor, select <strong>Compile</strong> to check syntax, then select <strong>Run</strong>. Ctrl+Enter (or Cmd+Enter) also runs the program.</p><pre><code>name = input("What is your name? ")
 output("Hello,", name)</code></pre></section>
@@ -74,7 +74,34 @@ Loop --(count):
 --
 
 greet()</code></pre></section>
-<section class="panel docs-card" id="operators"><h2>Operators</h2><table class="docs-table"><thead><tr><th>Operator</th><th>Meaning</th></tr></thead><tbody><tr><td><code>+</code></td><td>Addition; joins values if either side is a string</td></tr><tr><td><code>-</code></td><td>Subtraction or unary negative</td></tr><tr><td><code>*</code></td><td>Multiplication</td></tr><tr><td><code>/</code></td><td>Division</td></tr><tr><td><code>#value</code></td><td>Square root</td></tr><tr><td><code>==</code></td><td>Equal</td></tr><tr><td><code>/=</code></td><td>Not equal</td></tr><tr><td><code>&lt;</code>, <code>&gt;</code></td><td>Less than / greater than</td></tr><tr><td><code>&lt;=</code>, <code>&gt;=</code></td><td>Less/greater than or equal</td></tr></tbody></table></section>
+<section class="panel docs-card" id="modules"><h2>Optional modules: Neural</h2><p>Import an optional module with <code>imp.moduleName</code>. Neural adds network-specific block syntax and functions through <code>imp.neural</code>.</p><pre><code>imp.neural
+
+speed = 0.75
+trackwalldistance = 0.30
+temp = 0.50
+gas = 0
+brakes = 0
+turning = 0
+
+neural.nexiusRacingBot.inputLayer -- (3):
+  neural.in1 = speed
+  neural.in2 = trackwalldistance
+  neural.in3 = temp
+--
+
+neural.nexiusRacingBot.hidden -- (2):
+  neural.HL1(5)
+  neural.HL2(3)
+--
+
+neural.nexiusRacingBot.outputLayer -- (3):
+  neural.out1 = gas
+  neural.out2 = brakes
+  neural.out3 = turning
+--
+
+neural.assemble(nexiusRacingBot)
+gas = neural.getout1(nexiusRacingBot)</code></pre><p>This declares a 3-5-3-3 feed-forward network. The counts after <code>inputLayer</code> and <code>outputLayer</code> specify neuron counts; the count after <code>hidden</code> specifies the number of hidden layers. Each <code>HLN(amount)</code> specifies one hidden layer's size. Identifiers are sequential from 1 and local to their layer declaration.</p><p>Inputs read the latest linked variable values each time an output is requested. Output bindings are updated with calculated values. The initial runtime uses randomly initialized weights and sigmoid activation. Training and weight persistence are not implemented yet.</p></section>\n<section class="panel docs-card" id="operators"><h2>Operators</h2><table class="docs-table"><thead><tr><th>Operator</th><th>Meaning</th></tr></thead><tbody><tr><td><code>+</code></td><td>Addition; joins values if either side is a string</td></tr><tr><td><code>-</code></td><td>Subtraction or unary negative</td></tr><tr><td><code>*</code></td><td>Multiplication</td></tr><tr><td><code>/</code></td><td>Division</td></tr><tr><td><code>#value</code></td><td>Square root</td></tr><tr><td><code>==</code></td><td>Equal</td></tr><tr><td><code>/=</code></td><td>Not equal</td></tr><tr><td><code>&lt;</code>, <code>&gt;</code></td><td>Less than / greater than</td></tr><tr><td><code>&lt;=</code>, <code>&gt;=</code></td><td>Less/greater than or equal</td></tr></tbody></table></section>
 <section class="panel docs-card" id="rules"><h2>Language rules</h2><ul><li>Assignment uses one equals sign: <code>score = 10</code>.</li><li>Equality comparisons use two equals signs: <code>score == 10</code>.</li><li><code>if</code>, <code>while</code>, and <code>define</code> headers end with a colon.</li><li>Every opened block must be closed with its own <code>--</code>.</li><li>Use the exact <code>-- ELIF --</code> and <code>-- ELSE --</code> marker forms.</li><li>Strings support straight single/double quotes and matching typographic curly quotes.</li><li>Indentation is for readability; block markers determine block boundaries in the current parser.</li><li>List indexes start at zero.</li></ul><div class="docs-note">If an error points to a line, check its punctuation and the block markers around it.</div></section>
 <section class="panel docs-card" id="limits"><h2>Current limitations</h2><p>Nexius is under active development. The browser preview parses Nexius into an internal syntax tree and executes it in a JavaScript-based runtime; it does not yet compile native machine code or WebAssembly.</p><ul><li>User-defined functions currently take no parameters and return no values.</li><li>General function calls inside expressions are not supported, except <code>checkfor(key)</code>.</li><li>Lists support creation and indexed reads; mutation methods are not implemented.</li><li>Classes, imports, file I/O, and native compilation are not implemented yet.</li></ul></section>
 </div></div></main>
