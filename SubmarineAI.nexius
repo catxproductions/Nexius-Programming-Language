@@ -1,12 +1,12 @@
-
 ,,, NEXIUS AUTONOMOUS SUBMARINE AI
 ,,, Neural architecture: 10-20-16-10-7
-,,, Simulation controller
+,,, Simulation-only controller example.
+,,, Sensor variables must be updated by the simulator.
 
 imp.neural
 
 ,,, --------------------------------
-,,, 1. SENSOR VARIABLES
+,,, 1. SIMULATED SENSOR INPUTS
 ,,, --------------------------------
 
 distFromSeaFloor = 100
@@ -27,10 +27,7 @@ engineTemperature = 25
 ,,, 2. CONFIGURATION
 ,,, --------------------------------
 
-safeFloorDistance = 15
-safeSurfaceDistance = 10
 obstacleThreshold = 20
-
 criticalHullIntegrity = 30
 criticalWaterLevel = 60
 criticalTemperature = 90
@@ -42,7 +39,7 @@ goalReached = false
 hullCritical = false
 
 ,,, --------------------------------
-,,, 3. OUTPUT VARIABLES
+,,, 3. SIMULATED OUTPUT VARIABLES
 ,,, --------------------------------
 
 forwardPower = 0
@@ -54,7 +51,7 @@ bilgePower = 0
 floodControl = 0
 
 ,,, --------------------------------
-,,, 4. BUILD NEURAL NETWORK
+,,, 4. BUILD THE NEURAL NETWORK
 ,,, --------------------------------
 
 define -- buildAI():
@@ -91,31 +88,34 @@ define -- buildAI():
 --
 
 ,,, --------------------------------
-,,, 5. INITIALIZE AI
+,,, 5. INITIALIZE
 ,,, --------------------------------
 
 buildAI()
-
 output("SubmarineAI initialized.")
 output("Neural network assembled.")
 
 ,,, --------------------------------
-,,, 6. MAIN SIMULATION LOOP
+,,, 6. SIMULATION LOOP
 ,,, --------------------------------
 
 while -- aiEnabled == true:
 
-    ,,, Run one complete neural inference.
+    ,,, Run exactly one neural inference per cycle.
     neural.run(SubmarineAI)
 
-    ,,, Reset temporary state.
+    ,,, Reset per-cycle detection flags.
     emergencyMode = false
     obstacleDetected = false
     hullCritical = false
     goalReached = false
 
+    ,,, Reset simulated auxiliary output.
+    bilgePower = 0
+    floodControl = 0
+
     ,,, --------------------------------
-    ,,, 7. ENVIRONMENT DETECTION
+    ,,, 7. DETECT ENVIRONMENT CONDITIONS
     ,,, --------------------------------
 
     if -- distFromObstacle < obstacleThreshold:
@@ -131,17 +131,18 @@ while -- aiEnabled == true:
     --
 
     ,,, --------------------------------
-    ,,, 8. EMERGENCY DETECTION
+    ,,, 8. CHECK EMERGENCY CONDITIONS
     ,,, --------------------------------
 
-    emergencyMode = boolIf -- hullCritical == true or waterLevel > criticalWaterLevel or engineTemperature > criticalTemperature --
+    if -- hullCritical == true or waterLevel > criticalWaterLevel or engineTemperature > criticalTemperature:
+        emergencyMode = true
+    --
 
     ,,, --------------------------------
-    ,,, 9. EMERGENCY RESPONSE
+    ,,, 9. SIMULATION OVERRIDES
     ,,, --------------------------------
 
     if -- emergencyMode == true:
-
         forwardPower = 0
         reversePower = 0
         risePower = 0
@@ -153,23 +154,18 @@ while -- aiEnabled == true:
         --
 
         floodControl = 0
-
-        output("WARNING: Emergency state detected.")
+        output("WARNING: simulated emergency state.")
 
     -- ELIF -- obstacleDetected == true:
-
         forwardPower = 0
         reversePower = 1
-        turnPower = 1
-        divePower = 0
         risePower = 0
-
-        output("Obstacle detected.")
+        divePower = 0
+        turnPower = 1
+        output("Simulated obstacle detected.")
 
     -- ELSE --:
-
         output("AI operating normally.")
-
     --
 
     ,,, --------------------------------
@@ -190,7 +186,7 @@ while -- aiEnabled == true:
     --
 
     ,,, --------------------------------
-    ,,, 11. STATUS
+    ,,, 11. STATUS OUTPUT
     ,,, --------------------------------
 
     output("Forward:", forwardPower)
@@ -201,5 +197,4 @@ while -- aiEnabled == true:
     output("Bilge:", bilgePower)
 
     wait(0.05)
-
 --
