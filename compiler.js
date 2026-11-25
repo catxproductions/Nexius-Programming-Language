@@ -394,8 +394,12 @@
             const definition = classes[className];
             if (!definition) throw new NexiusError("Class '" + className + "' is not defined.", node.line);
             const args = node.expression.args.map(evaluate);
-            const instance = Object.create(null);
-            Object.defineProperty(instance, "__nexiusClass", { value: className, enumerable: false });
+            let instance = null;
+            if (definition.baseName && !classes[definition.baseName] && typeof hooks.createBaseInstance === "function") {
+              instance = await hooks.createBaseInstance(definition.baseName, className, args);
+            }
+            if (!instance || (typeof instance !== "object" && typeof instance !== "function")) instance = Object.create(null);
+            Object.defineProperty(instance, "__nexiusClass", { value: className, enumerable: false, configurable: true });
             let cursor = definition;
             const inherited = [];
             while (cursor) {
@@ -543,15 +547,19 @@
               method = classDef.methods[methodName];
               classDef = classDef.baseName ? classes[classDef.baseName] || null : null;
             }
-            if (!method) throw new NexiusError("Method '" + methodName + "' is not defined for '" + instance.__nexiusClass + "'.", node.line);
             const args = (node.args || []).map(evaluate);
-            if (args.length !== method.params.length) throw new NexiusError("Method '" + methodName + "' expects " + method.params.length + " argument(s), received " + args.length + ".", node.line);
-            const scope = Object.create(null);
-            method.params.forEach((param, index) => { scope[param] = args[index]; });
-            localScopes.push(scope);
-            const previousThis = currentThis; currentThis = instance;
-            try { await execute(method.body); }
-            finally { currentThis = previousThis; localScopes.pop(); }
+            if (!method) {
+              if (typeof instance[methodName] !== "function") throw new NexiusError("Method '" + methodName + "' is not defined for '" + instance.__nexiusClass + "'.", node.line);
+              instance[methodName](...args);
+            } else {
+              if (args.length !== method.params.length) throw new NexiusError("Method '" + methodName + "' expects " + method.params.length + " argument(s), received " + args.length + ".", node.line);
+              const scope = Object.create(null);
+              method.params.forEach((param, index) => { scope[param] = args[index]; });
+              localScopes.push(scope);
+              const previousThis = currentThis; currentThis = instance;
+              try { await execute(method.body); }
+              finally { currentThis = previousThis; localScopes.pop(); }
+            }
           } else {
             if (!functions[node.name]) throw new NexiusError("Function '" + node.name + "' is not defined.", node.line);
             if ((node.args || []).length !== 0) throw new NexiusError("User-defined functions do not accept arguments yet.", node.line);
