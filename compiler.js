@@ -257,6 +257,7 @@
   }
   function count(nodes) {
     return nodes.reduce((n, x) => n + 1 + (x.body ? count(x.body) : 0) + (x.otherwise ? count(x.otherwise) : 0) +
+      (x.methods ? Object.values(x.methods).reduce((total, method) => total + count(method.body), 0) : 0) +
       (x.branches ? x.branches.reduce((a, b) => a + count(b.body), 0) : 0), 0);
   }
 
