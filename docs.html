@@ -9,7 +9,7 @@
 <main class="docs-page">
 <section class="docs-hero"><span class="eyebrow">CURRENT LANGUAGE REFERENCE</span><h1>Nexius Documentation</h1><p>Syntax, built-in commands, operators, and rules for writing Nexius programs in Nexius Studio.</p><a class="docs-back" href="./">← Return to Studio</a></section>
 <div class="docs-layout">
-<nav class="panel docs-nav" aria-label="Documentation sections"><a href="#start">Quick start</a><a href="#comments">Comments</a><a href="#values">Variables and values</a><a href="#io">Input and output</a><a href="#lists">Lists</a><a href="#console">Console commands</a><a href="#conditions">Conditions</a><a href="#loops">Loops</a><a href="#keyboard">Keyboard events</a><a href="#modules">Modules and Neural</a><a href="#functions">Functions</a><a href="#operators">Operators</a><a href="#rules">Language rules</a><a href="#limits">Limitations</a></nav>
+<nav class="panel docs-nav" aria-label="Documentation sections"><a href="#start">Quick start</a><a href="#comments">Comments</a><a href="#values">Variables and values</a><a href="#io">Input and output</a><a href="#lists">Lists</a><a href="#console">Console commands</a><a href="#conditions">Conditions</a><a href="#loops">Loops</a><a href="#keyboard">Keyboard events</a><a href="#modules">Modules and Neural</a><a href="#oop">Object-oriented programming</a><a href="#functions">Functions</a><a href="#operators">Operators</a><a href="#rules">Language rules</a><a href="#limits">Limitations</a></nav>
 <div class="docs-content">
 <section class="panel docs-card" id="start"><h2>Quick start</h2><p>Write code in the Studio editor, select <strong>Compile</strong> to check syntax, then select <strong>Run</strong>. Ctrl+Enter (or Cmd+Enter) also runs the program.</p><pre><code>name = input("What is your name? ")
 output("Hello,", name)</code></pre></section>
@@ -73,6 +73,22 @@ count = 3
 Loop --(count):
   output("Repeated:", count)
 --</code></pre></section>
+<section class="panel docs-card" id="oop"><h2>Object-oriented programming: OOP</h2><p>Import the built-in OOP language feature with <code>imp.OOP</code>. A class begins with <code>class -- ClassName:</code> or <code>class -- Child extends Parent:</code>. Each method has its own <code>--:</code> header and closes with <code>--</code>; the class has a final closing <code>--</code>.</p><pre><code>imp.OOP
+
+class -- PhysicsObject extends Fracturius.Entity:
+  constructor(mass, friction) --:
+    this.mass = mass
+    this.friction = friction
+  --
+
+  update(deltaTime) --:
+    output("Updating object:", this.mass, deltaTime)
+  --
+--
+
+box = newPhysicsObject(10, 0.4)
+box.update(0.016)
+output(box.mass)</code></pre><h3>Supported OOP behavior</h3><ul><li>Constructors accept parameters and initialize instance properties through <code>this.property</code>.</li><li>Methods accept parameters and can read or update instance properties.</li><li>Instances are created with <code>newClassName(arguments)</code>, matching the Nexius naming convention.</li><li><code>extends</code> supports inheritance from another Nexius class; derived methods override inherited methods with the same name.</li><li>Inherited constructors are used when the child class does not declare its own constructor.</li><li>Object properties can be read with <code>object.property</code> and assigned with <code>object.property = value</code>.</li></ul><p>Classes must be declared after <code>imp.OOP</code>. A class body contains method declarations; each method and the class itself must have a closing <code>--</code>. External base names such as <code>Fracturius.Entity</code> are accepted as integration points; the Fracturius engine supplies the actual engine-side base behavior.</p><p class="docs-note">Current OOP scope: instance methods are invoked as statements (for example, <code>box.update(0.016)</code>). Method return values, static members, interfaces, and access modifiers are planned for later language versions.</p></section>
 <section class="panel docs-card" id="functions"><h2>Functions</h2><p>Define a zero-argument function with <code>define -- name():</code>, close it with <code>--</code>, and call it with its name and parentheses.</p><pre><code>define -- greet():
   output("Hello from Nexius!")
 --
