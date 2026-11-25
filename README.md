@@ -145,6 +145,32 @@ Serve this folder with any static web server, or enable GitHub Pages for the rep
 
 Nexius is under active development; syntax and runtime behavior may change as the language specification matures.
 
+## Object-oriented programming: OOP
+
+Import the built-in OOP feature with `imp.OOP`. Classes use Nexius block markers, parameterized constructors and methods, `this.property` instance access, and `extends` inheritance.
+
+```nexius
+imp.OOP
+
+class -- PhysicsObject:
+  constructor(mass, friction) --:
+    this.mass = mass
+    this.friction = friction
+  --
+
+  update(deltaTime) --:
+    output("Physics step:", this.mass, deltaTime)
+  --
+--
+
+box = newPhysicsObject(10, 0.4)
+box.update(0.016)
+```
+
+The runtime supports inherited constructors, method overriding, object property reads/writes, and host-provided engine base objects. An embedding engine can provide `createBaseInstance(baseName, className, args)` in the compiler runtime hooks; this is the integration point for bases such as `Fracturius.Entity`. See [the OOP example](examples/imp-oop.nexius).
+
+Current limitations: OOP methods are invoked as statements and do not yet return values. Static members, interfaces, and access modifiers are not implemented yet.
+
 ## Optional modules: Neural
 
 Import Neural with `imp.neural`. This module adds network layer syntax and functions. The example declares a 3-5-3-3 feed-forward network:
