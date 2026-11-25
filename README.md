@@ -137,7 +137,7 @@ isReady = boolIf -- score >= 100 --
 
 The browser preview currently parses Nexius source into an internal syntax tree and executes that tree in a JavaScript-based Nexius runtime. It is **not yet generating native machine code or WebAssembly**. That is a later compiler-backend milestone.
 
-Current preview supports variables, numeric/string expressions, comparisons, counted `Loop` blocks, lists with indexed access, `input()`, `numinput()`, multi-value `output()`, `clear()`, `wait(time)`, `if/ELIF/ELSE`, `while`, zero-argument functions, keyboard state checks, press/release event blocks, persistent `perm.` listeners, and the comment forms above. Function parameters, return values, pointers, real-time event listeners, arbitrary third-party modules, and native compilation are not implemented yet. The optional Neural module is documented below.
+Current preview supports variables, numeric/string expressions, comparisons, counted `Loop` blocks, lists with indexed access, `input()`, `numinput()`, multi-value `output()`, `clear()`, `wait(time)`, `if/ELIF/ELSE`, `while`, zero-argument functions, keyboard state checks, press/release event blocks, persistent `perm.` listeners, and the comment forms above. The built-in `imp.OOP` feature adds classes, constructors, instance properties, parameterized methods, inheritance, method overriding, and object creation. General function return values, pointers, real-time event listeners, arbitrary third-party modules, and native compilation are not implemented yet. The optional Neural module is documented below.
 
 ## Running locally
 
