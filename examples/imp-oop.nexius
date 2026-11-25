@@ -1,0 +1,22 @@
+imp.OOP
+
+class -- PhysicsObject:
+    constructor(mass, friction) --:
+        this.mass = mass
+        this.friction = friction
+    --
+
+    update(deltaTime) --:
+        output("Physics step:", this.mass, this.friction, deltaTime)
+    --
+--
+
+class -- HeavyObject extends PhysicsObject:
+    update(deltaTime) --:
+        output("Heavy object update:", this.mass, deltaTime)
+    --
+--
+
+box = newHeavyObject(10, 0.4)
+box.update(0.016)
+output("Mass:", box.mass)
