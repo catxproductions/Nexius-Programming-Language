@@ -282,8 +282,10 @@
         if (!currentThis) throw new NexiusError("'this' can only be used inside an instance method.");
         return name.slice(5).split(".").reduce((value, key) => value == null ? undefined : value[key], currentThis);
       }
-      for (let i = localScopes.length - 1; i >= 0; i--) if (name in localScopes[i]) return localScopes[i][name];
       const parts = name.split(".");
+      for (let i = localScopes.length - 1; i >= 0; i--) {
+        if (parts[0] in localScopes[i]) return parts.slice(1).reduce((value, key) => value == null ? undefined : value[key], localScopes[i][parts[0]]);
+      }
       if (parts[0] in vars) return parts.slice(1).reduce((value, key) => value == null ? undefined : value[key], vars[parts[0]]);
       if (name in vars) return vars[name];
       throw new NexiusError("Variable '" + name + "' is not defined.");
@@ -298,11 +300,18 @@
         return;
       }
       const parts = name.split(".");
-      if (parts.length > 1 && parts[0] in vars) {
-        let target = vars[parts.shift()];
-        while (parts.length > 1) target = target[parts.shift()];
-        target[parts[0]] = value;
-        return;
+      if (parts.length > 1) {
+        let root = null;
+        for (let i = localScopes.length - 1; i >= 0; i--) {
+          if (parts[0] in localScopes[i]) { root = localScopes[i][parts.shift()]; break; }
+        }
+        if (root === null && parts.length > 1 && parts[0] in vars) root = vars[parts.shift()];
+        if (root !== null) {
+          let target = root;
+          while (parts.length > 1) target = target[parts.shift()];
+          target[parts[0]] = value;
+          return;
+        }
       }
       if (localScopes.length) localScopes[localScopes.length - 1][name] = value;
       else vars[name] = value;
@@ -526,7 +535,7 @@
             }
           } else if (node.name.includes(".")) {
             const parts = node.name.split(".");
-            const instance = parts[0] === "this" ? currentThis : vars[parts.shift()];
+            const instance = parts[0] === "this" ? currentThis : resolveName(parts.shift());
             const methodName = parts[parts.length - 1];
             if (!instance || !instance.__nexiusClass) throw new NexiusError("Method target '" + node.name + "' is not a Nexius object.", node.line);
             let classDef = classes[instance.__nexiusClass], method = null;
