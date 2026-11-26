@@ -143,9 +143,32 @@
         let m;
         if ((m = s.match(/^imp\.([A-Za-z_][A-Za-z0-9_]*)$/i))) {
           const moduleName = m[1].toLowerCase();
-          if (moduleName !== "neural" || !neuralModule) throw new NexiusError("Optional module '" + moduleName + "' is not available.", r.line);
+          if (moduleName !== "neural" && moduleName !== "oop") throw new NexiusError("Optional module '" + moduleName + "' is not available.", r.line);
+          if (moduleName === "neural" && !neuralModule) throw new NexiusError("Optional module 'neural' is not available.", r.line);
           importedModules.add(moduleName);
           body.push({ type: "import", name: moduleName, line: r.line }); continue;
+        }
+        if ((m = s.match(/^class\s+--\s*([A-Za-z_][A-Za-z0-9_]*)(?:\s+extends\s+([A-Za-z_][A-Za-z0-9_.]*))?\s*:\s*$/i))) {
+          if (!importedModules.has("oop")) throw new NexiusError("Add imp.OOP before declaring classes.", r.line);
+          const className = m[1], baseName = m[2] || null, methods = Object.create(null);
+          while (p < records.length && records[p].text !== "--") {
+            const methodRecord = records[p++];
+            const mm = methodRecord.text.match(/^(constructor|[A-Za-z_][A-Za-z0-9_]*)\s*\((.*?)\)\s*--\s*:\s*$/i);
+            if (!mm) throw new NexiusError("Expected a method declaration like update(deltaTime) --:", methodRecord.line);
+            const methodName = mm[1], rawParams = mm[2].trim();
+            const params = rawParams ? rawParams.split(",").map(x => x.trim()) : [];
+            if (params.some(x => !/^[A-Za-z_][A-Za-z0-9_]*$/.test(x)) || new Set(params).size !== params.length) {
+              throw new NexiusError("Method parameters must be unique valid Nexius identifiers.", methodRecord.line);
+            }
+            if (Object.prototype.hasOwnProperty.call(methods, methodName)) throw new NexiusError("Method '" + methodName + "' is already declared in class '" + className + "'.", methodRecord.line);
+            const methodBody = block();
+            if (p >= records.length || records[p].text !== "--") throw new NexiusError("Expected -- to close method '" + methodName + "'.", methodRecord.line);
+            p++;
+            methods[methodName] = { name: methodName, params, body: methodBody, line: methodRecord.line };
+          }
+          if (p >= records.length || records[p].text !== "--") throw new NexiusError("Expected -- to close class '" + className + "'.", r.line);
+          p++;
+          body.push({ type: "classDef", name: className, baseName, methods, line: r.line }); continue;
         }
         let neuralHeader = null;
         if (neuralModule) {
@@ -208,7 +231,7 @@
           p++; body.push({ type: "define", name: m[1], body: commands, line: r.line }); continue;
         }
         if (s === "--" || s.startsWith("-- ELIF") || s.startsWith("-- ELSE")) throw new NexiusError("Unexpected block closing marker.", r.line);
-        if ((m = s.match(/^([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.+)$/))) {
+        if ((m = s.match(/^([A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z_][A-Za-z0-9_]*)*)\s*=\s*(.+)$/))) {
           body.push({ type: "assign", name: m[1], expression: parseExpression(m[2], r.line), line: r.line }); continue;
         }
         if ((m = s.match(/^output\s*\((.*)\)\s*$/))) {
@@ -234,6 +257,7 @@
   }
   function count(nodes) {
     return nodes.reduce((n, x) => n + 1 + (x.body ? count(x.body) : 0) + (x.otherwise ? count(x.otherwise) : 0) +
+      (x.methods ? Object.values(x.methods).reduce((total, method) => total + count(method.body), 0) : 0) +
       (x.branches ? x.branches.reduce((a, b) => a + count(b.body), 0) : 0), 0);
   }
 
@@ -245,8 +269,53 @@
 
   async function run(compiled, hooks, options) {
     hooks = hooks || {}; options = options || {};
-    const vars = Object.create(null), functions = Object.create(null);
+    const vars = Object.create(null), functions = Object.create(null), classes = Object.create(null);
     const loadedModules = new Set();
+    const localScopes = [];
+    let currentThis = null;
+    const resolveName = (name) => {
+      if (name === "this") {
+        if (!currentThis) throw new NexiusError("'this' can only be used inside an instance method.");
+        return currentThis;
+      }
+      if (name.startsWith("this.")) {
+        if (!currentThis) throw new NexiusError("'this' can only be used inside an instance method.");
+        return name.slice(5).split(".").reduce((value, key) => value == null ? undefined : value[key], currentThis);
+      }
+      const parts = name.split(".");
+      for (let i = localScopes.length - 1; i >= 0; i--) {
+        if (parts[0] in localScopes[i]) return parts.slice(1).reduce((value, key) => value == null ? undefined : value[key], localScopes[i][parts[0]]);
+      }
+      if (parts[0] in vars) return parts.slice(1).reduce((value, key) => value == null ? undefined : value[key], vars[parts[0]]);
+      if (name in vars) return vars[name];
+      throw new NexiusError("Variable '" + name + "' is not defined.");
+    };
+    const assignName = (name, value) => {
+      if (name.startsWith("this.")) {
+        if (!currentThis) throw new NexiusError("'this' can only be assigned inside an instance method.");
+        const parts = name.slice(5).split(".");
+        let target = currentThis;
+        while (parts.length > 1) target = target[parts.shift()];
+        target[parts[0]] = value;
+        return;
+      }
+      const parts = name.split(".");
+      if (parts.length > 1) {
+        let root = null;
+        for (let i = localScopes.length - 1; i >= 0; i--) {
+          if (parts[0] in localScopes[i]) { root = localScopes[i][parts.shift()]; break; }
+        }
+        if (root === null && parts.length > 1 && parts[0] in vars) root = vars[parts.shift()];
+        if (root !== null) {
+          let target = root;
+          while (parts.length > 1) target = target[parts.shift()];
+          target[parts[0]] = value;
+          return;
+        }
+      }
+      if (localScopes.length) localScopes[localScopes.length - 1][name] = value;
+      else vars[name] = value;
+    };
     const neuralRuntime = window.NexiusModules && window.NexiusModules.neural ? window.NexiusModules.neural.createRuntime() : null;
     let stopped = false, steps = 0;
     const keyStates = new Map(), keyHandlers = [], trackedKeys = new Set(), eventWaiters = [];
@@ -269,10 +338,7 @@
         if (!Number.isInteger(Number(index)) || Number(index) < 0 || Number(index) >= target.length) throw new NexiusError("List index is out of range.");
         return target[Number(index)];
       }
-      if (node.type === "variable") {
-        if (!(node.name in vars)) throw new NexiusError("Variable '" + node.name + "' is not defined.");
-        return vars[node.name];
-      }
+      if (node.type === "variable") return resolveName(node.name);
       if (node.type === "boolIf") return Boolean(evaluate(node.expression));
       if (node.type === "unary") {
         const v = evaluate(node.right);
@@ -318,8 +384,41 @@
         } else if (node.type === "neuralLayer") {
           if (!loadedModules.has("neural") || !neuralRuntime) throw new NexiusError("Import neural with imp.neural before declaring Neural layers.", node.line);
           try { neuralRuntime.declareLayer(node); } catch (error) { throw new NexiusError(error.message, node.line); }
+        } else if (node.type === "classDef") {
+          if (classes[node.name]) throw new NexiusError("Class '" + node.name + "' is already defined.", node.line);
+          classes[node.name] = node;
         } else if (node.type === "assign") {
-          if (node.expression.type === "call" && (node.expression.name === "input" || node.expression.name === "numinput")) {
+          if (node.expression.type === "call" && /^new[A-Z_]/.test(node.expression.name)) {
+            const className = node.expression.name.slice(3);
+            if (!loadedModules.has("oop")) throw new NexiusError("Import OOP with imp.OOP before creating objects.", node.line);
+            const definition = classes[className];
+            if (!definition) throw new NexiusError("Class '" + className + "' is not defined.", node.line);
+            const args = node.expression.args.map(evaluate);
+            let instance = null;
+            if (definition.baseName && !classes[definition.baseName] && typeof hooks.createBaseInstance === "function") {
+              instance = await hooks.createBaseInstance(definition.baseName, className, args);
+            }
+            if (!instance || (typeof instance !== "object" && typeof instance !== "function")) instance = Object.create(null);
+            Object.defineProperty(instance, "__nexiusClass", { value: className, enumerable: false, configurable: true });
+            let cursor = definition;
+            const inherited = [];
+            while (cursor) {
+              inherited.unshift(cursor);
+              cursor = cursor.baseName ? classes[cursor.baseName] || null : null;
+            }
+            const ownConstructor = definition.methods.constructor;
+            const constructor = ownConstructor || inherited.map(x => x.methods.constructor).find(Boolean);
+            if (constructor) {
+              if (constructor.params.length !== args.length) throw new NexiusError("Constructor for '" + className + "' expects " + constructor.params.length + " argument(s), received " + args.length + ".", node.line);
+              const scope = Object.create(null);
+              constructor.params.forEach((param, index) => { scope[param] = args[index]; });
+              localScopes.push(scope);
+              const previousThis = currentThis; currentThis = instance;
+              try { await execute(constructor.body); }
+              finally { currentThis = previousThis; localScopes.pop(); }
+            } else if (args.length) throw new NexiusError("Class '" + className + "' has no constructor accepting arguments.", node.line);
+            assignName(node.name, instance);
+          } else if (node.expression.type === "call" && (node.expression.name === "input" || node.expression.name === "numinput")) {
             const isNumber = node.expression.name === "numinput";
             const raw = await readInput(node.expression.args.length ? evaluate(node.expression.args[0]) : "", isNumber ? "number" : "text");
             if (isNumber) {
@@ -327,9 +426,9 @@
               if (String(raw).trim() === "" || !Number.isFinite(value)) {
                 throw new NexiusError("numinput() requires a valid number.", node.line);
               }
-              vars[node.name] = value;
-            } else vars[node.name] = raw;
-          } else vars[node.name] = evaluate(node.expression);
+              assignName(node.name, value);
+            } else assignName(node.name, raw);
+          } else assignName(node.name, evaluate(node.expression));
         } else if (node.type === "output") {
           const values = [];
           for (const expression of node.expressions || []) {
@@ -437,6 +536,29 @@
             const endTime = Date.now() + seconds * 1000;
             while (!shouldStop() && Date.now() < endTime) {
               await new Promise(resolve => setTimeout(resolve, Math.min(50, Math.max(0, endTime - Date.now()))));
+            }
+          } else if (node.name.includes(".")) {
+            const parts = node.name.split(".");
+            const instance = parts[0] === "this" ? currentThis : resolveName(parts.shift());
+            const methodName = parts[parts.length - 1];
+            if (!instance || !instance.__nexiusClass) throw new NexiusError("Method target '" + node.name + "' is not a Nexius object.", node.line);
+            let classDef = classes[instance.__nexiusClass], method = null;
+            while (classDef && !method) {
+              method = classDef.methods[methodName];
+              classDef = classDef.baseName ? classes[classDef.baseName] || null : null;
+            }
+            const args = (node.args || []).map(evaluate);
+            if (!method) {
+              if (typeof instance[methodName] !== "function") throw new NexiusError("Method '" + methodName + "' is not defined for '" + instance.__nexiusClass + "'.", node.line);
+              instance[methodName](...args);
+            } else {
+              if (args.length !== method.params.length) throw new NexiusError("Method '" + methodName + "' expects " + method.params.length + " argument(s), received " + args.length + ".", node.line);
+              const scope = Object.create(null);
+              method.params.forEach((param, index) => { scope[param] = args[index]; });
+              localScopes.push(scope);
+              const previousThis = currentThis; currentThis = instance;
+              try { await execute(method.body); }
+              finally { currentThis = previousThis; localScopes.pop(); }
             }
           } else {
             if (!functions[node.name]) throw new NexiusError("Function '" + node.name + "' is not defined.", node.line);

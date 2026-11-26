@@ -137,13 +137,39 @@ isReady = boolIf -- score >= 100 --
 
 The browser preview currently parses Nexius source into an internal syntax tree and executes that tree in a JavaScript-based Nexius runtime. It is **not yet generating native machine code or WebAssembly**. That is a later compiler-backend milestone.
 
-Current preview supports variables, numeric/string expressions, comparisons, counted `Loop` blocks, lists with indexed access, `input()`, `numinput()`, multi-value `output()`, `clear()`, `wait(time)`, `if/ELIF/ELSE`, `while`, zero-argument functions, keyboard state checks, press/release event blocks, persistent `perm.` listeners, and the comment forms above. Function parameters, return values, pointers, real-time event listeners, arbitrary third-party modules, and native compilation are not implemented yet. The optional Neural module is documented below.
+Current preview supports variables, numeric/string expressions, comparisons, counted `Loop` blocks, lists with indexed access, `input()`, `numinput()`, multi-value `output()`, `clear()`, `wait(time)`, `if/ELIF/ELSE`, `while`, zero-argument functions, keyboard state checks, press/release event blocks, persistent `perm.` listeners, and the comment forms above. The built-in `imp.OOP` feature adds classes, constructors, instance properties, parameterized methods, inheritance, method overriding, and object creation. General function return values, pointers, real-time event listeners, arbitrary third-party modules, and native compilation are not implemented yet. The optional Neural module is documented below.
 
 ## Running locally
 
 Serve this folder with any static web server, or enable GitHub Pages for the repository using the `main` branch and root folder. Then open `index.html` in a browser.
 
 Nexius is under active development; syntax and runtime behavior may change as the language specification matures.
+
+## Object-oriented programming: OOP
+
+Import the built-in OOP feature with `imp.OOP`. Classes use Nexius block markers, parameterized constructors and methods, `this.property` instance access, and `extends` inheritance.
+
+```nexius
+imp.OOP
+
+class -- PhysicsObject:
+  constructor(mass, friction) --:
+    this.mass = mass
+    this.friction = friction
+  --
+
+  update(deltaTime) --:
+    output("Physics step:", this.mass, deltaTime)
+  --
+--
+
+box = newPhysicsObject(10, 0.4)
+box.update(0.016)
+```
+
+The runtime supports inherited constructors, method overriding, object property reads/writes, and host-provided engine base objects. An embedding engine can provide `createBaseInstance(baseName, className, args)` in the compiler runtime hooks; this is the integration point for bases such as `Fracturius.Entity`. See [the OOP example](examples/imp-oop.nexius).
+
+Current limitations: OOP methods are invoked as statements and do not yet return values. Static members, interfaces, and access modifiers are not implemented yet.
 
 ## Optional modules: Neural
 
